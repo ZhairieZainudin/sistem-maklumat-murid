@@ -354,7 +354,11 @@ export default function App() {
              <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
           </div>
           <div>
-            <comment-tag id="1"><h1 className="text-sm font-bold leading-tight">Unit dan Pembangunan, Bahagian Pendidikan, Jabatan Agama Islam Perak</h1></comment-tag id="1" text="<h1 className=&quot;text-sm font-bold leading-tight&quot;>Unit Data dan Pembangunan,<br/>Bahagian Pendidikan,<br/>Jabatan Agama Islam Perak</h1>" type="suggestion">
+            <h1 className="text-sm font-bold leading-tight">
+              Unit Data dan Pembangunan,<br/>
+              Bahagian Pendidikan,<br/>
+              Jabatan Agama Islam Perak
+            </h1>
           </div>
         </div>
         
