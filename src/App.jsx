@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, FileDown, Upload, Trash2, Edit, Save, X, RefreshCw, CheckCircle, AlertCircle, AlertTriangle, LogOut, School, UserPlus, LogIn } from 'lucide-react';
+import { Search, Plus, FileDown, Upload, Trash2, Edit, Save, X, RefreshCw, CheckCircle, AlertCircle, AlertTriangle, LogOut, School, UserPlus, LogIn, Map } from 'lucide-react';
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHGt1qk9rWZy69XT1YgyAshR-faNwep9TvnZH8dc3Jw5IAFn1fO5oAkI_sHfd6ex0/exec';
 
@@ -246,7 +246,7 @@ export default function App() {
               <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
             </div>
           </div>
-          <h2 className="text-center text-lg sm:text-xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">Kutipan data Maklumat Murid B40 & Asnaf<br/>Institusi Pendidikan Islam Negeri Perak</h2>
+          <h2 className="text-center text-lg md:text-xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">Kutipan data Maklumat Murid B40 & Asnaf<br/>Institusi Pendidikan Islam Negeri Perak</h2>
         </div>
         
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -359,7 +359,7 @@ export default function App() {
              <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-sm font-bold leading-tight uppercase">
+            <h1 className="text-[11px] sm:text-xs font-bold leading-tight uppercase">
               Kutipan data Maklumat Murid B40 & Asnaf<br/>
               Institusi Pendidikan Islam Negeri Perak
             </h1>
@@ -429,11 +429,11 @@ export default function App() {
 
         <main className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-50/50">
           <div className="max-w-7xl mx-auto h-full">
-            {activeTab === 1 && <TabDashboard students={students} currentUser={currentUser} />}
-            {activeTab === 2 && <TabMaklumatMurid students={students} onSaveStudent={handleSaveStudent} onDeleteStudent={handleDeleteStudent} currentUser={currentUser} showNotification={showNotification} formatMyKid={formatMyKid} setDialog={setDialog} />}
+            {activeTab === 1 && <TabDashboard students={students} currentUser={currentUser} isLoading={isLoading} />}
+            {activeTab === 2 && <TabMaklumatMurid students={students} onSaveStudent={handleSaveStudent} onDeleteStudent={handleDeleteStudent} currentUser={currentUser} showNotification={showNotification} formatMyKid={formatMyKid} setDialog={setDialog} isLoading={isLoading} />}
             {activeTab === 4 && currentUser.role !== 'superadmin' && <TabProfilInstitusi currentUser={currentUser} onSaveUser={handleSaveUser} />}
-            {activeTab === 5 && currentUser?.role === 'superadmin' && <TabKawalanPengguna users={users} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} isSystemActive={isSystemActive} setIsSystemActive={setIsSystemActive} setDialog={setDialog} />}
-            {activeTab === 6 && currentUser?.role === 'superadmin' && <TabPelaporan students={students} users={users} />}
+            {activeTab === 5 && currentUser?.role === 'superadmin' && <TabKawalanPengguna users={users} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} isSystemActive={isSystemActive} setIsSystemActive={setIsSystemActive} setDialog={setDialog} isLoading={isLoading} />}
+            {activeTab === 6 && currentUser?.role === 'superadmin' && <TabPelaporan students={students} users={users} isLoading={isLoading} />}
           </div>
         </main>
       </div>
@@ -441,7 +441,7 @@ export default function App() {
   );
 }
 
-const TabDashboard = ({ students, currentUser }) => {
+const TabDashboard = ({ students, currentUser, isLoading }) => {
   const filtered = currentUser.role === 'superadmin' ? students : students.filter(s => s.kodInstitusi === currentUser.id);
   
   return (
@@ -452,17 +452,24 @@ const TabDashboard = ({ students, currentUser }) => {
         <p className="text-slate-600 relative z-10">Sila gunakan menu di sebelah kiri untuk menguruskan data murid. Pastikan maklumat diisi dengan tepat dan terkini.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-blue-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden transform hover:-translate-y-1 transition-all">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-          <p className="text-blue-100 font-medium mb-1">Jumlah Murid Didaftar</p>
-          <p className="text-4xl font-extrabold">{filtered.length}</p>
-        </div>
+        {isLoading ? (
+          <div className="bg-slate-200 rounded-2xl shadow-sm p-6 h-32 animate-pulse flex flex-col justify-center border border-slate-300">
+             <div className="h-4 bg-slate-300 rounded w-2/3 mb-3"></div>
+             <div className="h-10 bg-slate-300 rounded w-1/3"></div>
+          </div>
+        ) : (
+          <div className="bg-blue-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden transform hover:-translate-y-1 transition-all">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+            <p className="text-blue-100 font-medium mb-1">Jumlah Murid Didaftar</p>
+            <p className="text-4xl font-extrabold">{filtered.length}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUser, showNotification, formatMyKid, setDialog }) => {
+const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUser, showNotification, formatMyKid, setDialog, isLoading }) => {
   const [filter, setFilter] = useState({ nama: '', mykid: '', tahun: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStudentData, setCurrentStudentData] = useState({});
@@ -599,24 +606,38 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {filtered.map(s => (
-              <tr key={s.mykid} className="hover:bg-blue-50/50 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-900">{s.mykid}</td>
-                <td className="px-4 py-3 text-sm text-slate-900 font-medium">{s.nama}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 && s.kategoriB40 !== 'Bukan B40' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm">
-                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriFakirMiskin || '-'}</span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-900 mx-2 p-1 rounded hover:bg-blue-100 transition-colors"><Edit className="w-4 h-4"/></button>
-                  <button onClick={() => handleDeleteClick(s)} className="text-red-600 hover:text-red-900 mx-2 p-1 rounded hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && <tr><td colSpan="6" className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>}
+            {isLoading ? (
+              [...Array(5)].map((_, i) => (
+                <tr key={i} className="animate-pulse bg-slate-50/50">
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-24"></div></td>
+                  <td className="px-4 py-4"><div className="h-4 bg-slate-200 rounded w-48"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto"></div></td>
+                </tr>
+              ))
+            ) : filtered.length > 0 ? (
+              filtered.map(s => (
+                <tr key={s.mykid} className="hover:bg-blue-50/50 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-900">{s.mykid}</td>
+                  <td className="px-4 py-3 text-sm text-slate-900 font-medium">{s.nama}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 && s.kategoriB40 !== 'Bukan B40' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriFakirMiskin || '-'}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-900 mx-2 p-1 rounded hover:bg-blue-100 transition-colors"><Edit className="w-4 h-4"/></button>
+                    <button onClick={() => handleDeleteClick(s)} className="text-red-600 hover:text-red-900 mx-2 p-1 rounded hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr><td colSpan="6" className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -773,7 +794,7 @@ const TabProfilInstitusi = ({ currentUser, onSaveUser }) => {
   );
 };
 
-const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, setIsSystemActive, setDialog }) => {
+const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, setIsSystemActive, setDialog, isLoading }) => {
   const [filter, setFilter] = useState({ id: '', namaInstitusi: '', daerah: '', kategoriSekolah: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUserData, setCurrentUserData] = useState({});
@@ -839,19 +860,32 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {filtered.map(u => (
-              <tr key={u.id} className="hover:bg-blue-50/50 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-bold text-blue-700">{u.id}</td>
-                <td className="px-4 py-3 text-sm font-medium text-slate-900">{u.namaInstitusi}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{u.daerah}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{u.kategoriSekolah}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => handleEdit(u)} className="text-blue-600 hover:text-blue-900 mx-2 p-1 rounded hover:bg-blue-100 transition-colors"><Edit className="w-4 h-4"/></button>
-                  <button onClick={() => handleDeleteClick(u)} className="text-red-600 hover:text-red-900 mx-2 p-1 rounded hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada institusi dijumpai.</td></tr>}
+            {isLoading ? (
+              [...Array(4)].map((_, i) => (
+                <tr key={i} className="animate-pulse bg-slate-50/50">
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
+                  <td className="px-4 py-4"><div className="h-4 bg-slate-200 rounded w-48"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-24"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-32"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto"></div></td>
+                </tr>
+              ))
+            ) : filtered.length > 0 ? (
+              filtered.map(u => (
+                <tr key={u.id} className="hover:bg-blue-50/50 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-bold text-blue-700">{u.id}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{u.namaInstitusi}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{u.daerah}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{u.kategoriSekolah}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <button onClick={() => handleEdit(u)} className="text-blue-600 hover:text-blue-900 mx-2 p-1 rounded hover:bg-blue-100 transition-colors"><Edit className="w-4 h-4"/></button>
+                    <button onClick={() => handleDeleteClick(u)} className="text-red-600 hover:text-red-900 mx-2 p-1 rounded hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr><td colSpan="5" className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada institusi dijumpai.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -933,9 +967,33 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
   );
 };
 
-const TabPelaporan = ({ students, users }) => {
+const TabPelaporan = ({ students, users, isLoading }) => {
   const [reportType, setReportType] = useState('daerah');
   
+  const daerahsList = ["BAGAN DATUK", "BAGAN SERAI", "BATU GAJAH", "GERIK", "IPOH", "KAMPAR", "KAMPONG GAJAH", "KUALA KANGSAR", "LENGGONG", "MANJUNG", "MUALLIM", "PARIT BUNTAR", "PENGKALAN HULU", "SELAMA", "SERI ISKANDAR", "TAIPING", "TAPAH", "TELUK INTAN"];
+
+  const getHeatmapData = () => {
+    return daerahsList.map(d => {
+      const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
+      const dStudents = students.filter(s => dUsers.includes(s.kodInstitusi));
+      const asnafCount = dStudents.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length;
+      return { daerah: d, asnaf: asnafCount };
+    });
+  };
+
+  const heatmapData = getHeatmapData();
+  const maxAsnaf = Math.max(...heatmapData.map(d => d.asnaf), 1);
+
+  const getHeatmapColor = (count, max) => {
+    if (count === 0) return 'bg-slate-50 text-slate-400 border-slate-200';
+    const ratio = count / max;
+    if (ratio > 0.8) return 'bg-red-700 text-white shadow-md border-red-800';
+    if (ratio > 0.6) return 'bg-red-600 text-white shadow-md border-red-700';
+    if (ratio > 0.4) return 'bg-red-500 text-white shadow-sm border-red-600';
+    if (ratio > 0.2) return 'bg-red-400 text-white shadow-sm border-red-500';
+    return 'bg-red-100 text-red-800 border-red-200';
+  };
+
   const getStats = () => {
     let stats = [];
     if (reportType === 'daerah') {
@@ -965,26 +1023,54 @@ const TabPelaporan = ({ students, users }) => {
         <button onClick={handlePrint} className="px-4 py-2 rounded-lg bg-slate-800 text-white font-semibold text-sm hover:bg-slate-900 shadow-sm flex items-center gap-2"><FileDown className="w-4 h-4"/> Cetak A4</button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm text-center">
+           <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-2">Jumlah Murid</h3>
+           {isLoading ? <div className="h-10 bg-blue-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-blue-600">{students.length}</p>}
+        </div>
+        <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-100 shadow-sm text-center">
+           <h3 className="text-sm font-bold text-cyan-800 uppercase tracking-wider mb-2">Jumlah Asnaf (Fakir/Miskin)</h3>
+           {isLoading ? <div className="h-10 bg-cyan-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-cyan-600">{students.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length}</p>}
+        </div>
+        <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 shadow-sm text-center">
+           <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-2">Jumlah B40</h3>
+           {isLoading ? <div className="h-10 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}</p>}
+        </div>
+      </div>
+
+      {/* PETA HABA ASNAF */}
+      <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+           <Map className="w-5 h-5 text-red-600"/>
+           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Asnaf Daerah</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+           {heatmapData.map(d => (
+             <div key={d.daerah} className={`p-3 rounded-lg border flex flex-col justify-center items-center text-center transition-all duration-300 ${getHeatmapColor(d.asnaf, maxAsnaf)}`}>
+                <span className="text-[10px] font-bold uppercase mb-1 opacity-90">{d.daerah}</span>
+                <span className="text-xl font-black">{isLoading ? '-' : d.asnaf}</span>
+             </div>
+           ))}
+        </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-red-100"></div>
+              <div className="w-4 h-4 rounded bg-red-400"></div>
+              <div className="w-4 h-4 rounded bg-red-500"></div>
+              <div className="w-4 h-4 rounded bg-red-600"></div>
+              <div className="w-4 h-4 rounded bg-red-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
+      </div>
+
       <div className="mb-6 flex gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
         <select value={reportType} onChange={(e) => setReportType(e.target.value)} className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-slate-700">
           <option value="daerah">Pecahan Mengikut Daerah</option>
           <option value="kategori">Pecahan Mengikut Kategori Sekolah</option>
         </select>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm text-center">
-           <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-2">Jumlah Murid</h3>
-           <p className="text-4xl font-extrabold text-blue-600">{students.length}</p>
-        </div>
-        <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-100 shadow-sm text-center">
-           <h3 className="text-sm font-bold text-cyan-800 uppercase tracking-wider mb-2">Jumlah Asnaf (Fakir/Miskin)</h3>
-           <p className="text-4xl font-extrabold text-cyan-600">{students.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length}</p>
-        </div>
-        <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 shadow-sm text-center">
-           <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-2">Jumlah B40</h3>
-           <p className="text-4xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}</p>
-        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -998,14 +1084,25 @@ const TabPelaporan = ({ students, users }) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {getStats().map((st, i) => (
-              <tr key={i} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{st.label}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-600">{st.total}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-cyan-600">{st.asnaf}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-amber-600">{st.b40}</td>
-              </tr>
-            ))}
+            {isLoading ? (
+               [...Array(4)].map((_, i) => (
+                 <tr key={i} className="animate-pulse bg-slate-50/50">
+                   <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-32"></div></td>
+                   <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                   <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                   <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                 </tr>
+               ))
+            ) : (
+              getStats().map((st, i) => (
+                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{st.label}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-600">{st.total}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-cyan-600">{st.asnaf}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-amber-600">{st.b40}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
