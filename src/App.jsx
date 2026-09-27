@@ -246,7 +246,7 @@ export default function App() {
               <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
             </div>
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-white drop-shadow-md tracking-tight">JABATAN AGAMA ISLAM PERAK</h2>
+          <h2 className="text-center text-3xl font-extrabold text-white drop-shadow-md tracking-tight leading-tight mb-2">BAHAGIAN PENDIDIKAN,<br/>JABATAN AGAMA ISLAM PERAK</h2>
           <p className="mt-2 text-center text-sm text-blue-200 font-medium tracking-widest uppercase">Sistem Maklumat Murid B40 & Asnaf</p>
         </div>
         
@@ -354,8 +354,7 @@ export default function App() {
              <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight">Sistem Murid</h1>
-            <p className="text-xs text-blue-400 mt-1 uppercase tracking-wide">JAIPk Perak</p>
+            <comment-tag id="1"><h1 className="text-sm font-bold leading-tight">Unit dan Pembangunan, Bahagian Pendidikan, Jabatan Agama Islam Perak</h1></comment-tag id="1" text="<h1 className=&quot;text-sm font-bold leading-tight&quot;>Unit Data dan Pembangunan,<br/>Bahagian Pendidikan,<br/>Jabatan Agama Islam Perak</h1>" type="suggestion">
           </div>
         </div>
         
