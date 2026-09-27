@@ -459,6 +459,12 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
   const [currentStudentData, setCurrentStudentData] = useState({});
   const [dialogState, setDialogState] = useState({ isOpen: false, data: null });
 
+  const isProfileIncomplete = currentUser.role !== 'superadmin' && (!currentUser.namaInstitusi || !currentUser.alamatInstitusi || !currentUser.daerah || !currentUser.kategoriSekolah);
+
+  const showProfileAlert = () => {
+    setDialog({ isOpen: true, type: 'alert', title: 'Profil Tidak Lengkap', message: 'Sila ke menu "Profil Institusi" dan lengkapkan maklumat (Alamat, Daerah & Kategori) sebelum menguruskan data murid.', onConfirm: () => setDialog({isOpen: false})});
+  };
+
   const filtered = (currentUser.role === 'superadmin' ? students : students.filter(s => s.kodInstitusi === currentUser.id))
     .filter(s => s.nama?.toLowerCase().includes(filter.nama.toLowerCase()))
     .filter(s => s.mykid?.includes(filter.mykid))
@@ -483,6 +489,13 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
   const handleImportCSV = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (isProfileIncomplete) {
+      showProfileAlert();
+      e.target.value = null;
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       const text = event.target.result;
@@ -516,6 +529,10 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
   };
 
   const handleEdit = (s) => {
+    if (isProfileIncomplete) {
+      showProfileAlert();
+      return;
+    }
     setCurrentStudentData({...s});
     setIsModalOpen(true);
   };
@@ -538,7 +555,14 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 gap-4">
         <h2 className="text-xl font-bold text-slate-800">Senarai Murid & Kategori</h2>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => { setCurrentStudentData({ kodInstitusi: currentUser.id }); setIsModalOpen(true); }} className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 shadow-sm flex items-center gap-2"><Plus className="w-4 h-4"/> Tambah Rekod</button>
+          <button onClick={() => { 
+            if (isProfileIncomplete) {
+              showProfileAlert();
+              return;
+            }
+            setCurrentStudentData({ kodInstitusi: currentUser.id }); 
+            setIsModalOpen(true); 
+          }} className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 shadow-sm flex items-center gap-2"><Plus className="w-4 h-4"/> Tambah Rekod</button>
           <div className="relative">
             <input type="file" id="csv-upload-murid" accept=".csv" className="hidden" onChange={handleImportCSV} />
             <label htmlFor="csv-upload-murid" className="px-4 py-2 rounded-lg bg-slate-600 text-white font-semibold text-sm hover:bg-slate-700 shadow-sm flex items-center gap-2 cursor-pointer"><Upload className="w-4 h-4"/> Import CSV</label>
