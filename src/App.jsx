@@ -246,8 +246,7 @@ export default function App() {
               <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
             </div>
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-white drop-shadow-md tracking-tight leading-tight mb-2">BAHAGIAN PENDIDIKAN,<br/>JABATAN AGAMA ISLAM PERAK</h2>
-          <p className="mt-2 text-center text-sm text-blue-200 font-medium tracking-widest uppercase">Sistem Maklumat Murid B40 & Asnaf</p>
+          <h2 className="text-center text-lg sm:text-xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">Kutipan data Maklumat Murid B40 & Asnaf<br/>Institusi Pendidikan Islam Negeri Perak</h2>
         </div>
         
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -266,9 +265,15 @@ export default function App() {
                 </div>
                 <div className="pt-4 text-center border-t border-slate-100">
                   <p className="text-sm text-slate-500 mb-2">Institusi anda belum mendaftar?</p>
-                  <button type="button" onClick={() => setIsRegistering(true)} className="text-blue-700 font-bold hover:text-blue-800 hover:underline flex items-center justify-center gap-1 mx-auto w-full py-2 bg-blue-50 rounded-lg transition-colors">
+                  <button type="button" onClick={() => setIsRegistering(true)} className="text-blue-700 font-bold hover:text-blue-800 hover:underline flex items-center justify-center gap-1 mx-auto w-full py-2 bg-blue-50 rounded-lg transition-colors mb-6">
                     <UserPlus className="w-4 h-4"/> Daftar Institusi Baharu
                   </button>
+                  
+                  <div className="pt-4 mt-2 text-center border-t border-slate-100">
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed">
+                       Bahagian Pendidikan,<br/>Jabatan Agama Islam Perak
+                     </p>
+                  </div>
                 </div>
               </form>
             ) : (
@@ -354,10 +359,9 @@ export default function App() {
              <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-sm font-bold leading-tight">
-              Unit Data dan Pembangunan,<br/>
-              Bahagian Pendidikan,<br/>
-              Jabatan Agama Islam Perak
+            <h1 className="text-sm font-bold leading-tight uppercase">
+              Kutipan data Maklumat Murid B40 & Asnaf<br/>
+              Institusi Pendidikan Islam Negeri Perak
             </h1>
           </div>
         </div>
@@ -372,7 +376,7 @@ export default function App() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto relative z-10">
-          <button onClick={() => setActiveTab(1)} className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab===1 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>Papan Pemuka</button>
+          <button onClick={() => setActiveTab(1)} className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab===1 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>Dashboard</button>
           <button onClick={() => setActiveTab(2)} className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${activeTab===2 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>Senarai Maklumat Murid</button>
           
           {currentUser.role !== 'superadmin' && (
@@ -390,7 +394,12 @@ export default function App() {
           )}
         </nav>
         
-        <div className="p-4 bg-slate-950 border-t border-slate-800 mt-auto relative z-10">
+        <div className="p-4 bg-slate-950 border-t border-slate-800 mt-auto relative z-10 text-center">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed mb-3">
+             Unit Data dan Pembangunan,<br/>
+             Bahagian Pendidikan,<br/>
+             Jabatan Agama Islam Perak
+          </p>
           <button onClick={() => setIsLoggedIn(false)} className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-slate-700 rounded-xl shadow-sm text-sm font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
             <LogOut className="w-4 h-4"/> Log Keluar
           </button>
@@ -400,7 +409,7 @@ export default function App() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <header className="bg-white shadow-sm border-b border-slate-200 z-10 px-4 sm:px-8 py-4 flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-bold text-slate-800 truncate">
-            {activeTab === 1 && "Papan Pemuka"}
+            {activeTab === 1 && "Dashboard"}
             {activeTab === 2 && "Senarai Maklumat Murid"}
             {activeTab === 4 && "Profil Institusi"}
             {activeTab === 5 && "Kawalan Institusi"}
