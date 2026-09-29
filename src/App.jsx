@@ -246,7 +246,10 @@ export default function App() {
               <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
             </div>
           </div>
-          <h2 className="text-center text-lg md:text-xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">Kutipan data Maklumat Murid B40 & Asnaf<br/>Institusi Pendidikan Islam Negeri Perak</h2>
+          {/* Teks Tajuk Telah Disesuaikan Saiz dan Barisnya */}
+          <h2 className="text-center text-lg md:text-xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">
+            Kutipan data Maklumat Murid B40 & Asnaf<br/>Institusi Pendidikan Islam Negeri Perak
+          </h2>
         </div>
         
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -269,9 +272,10 @@ export default function App() {
                     <UserPlus className="w-4 h-4"/> Daftar Institusi Baharu
                   </button>
                   
+                  {/* Teks Jabatan Di Bawah Form (Dipindahkan dari atas) */}
                   <div className="pt-4 mt-2 text-center border-t border-slate-100">
                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed">
-                       Bahagian Pendidikan,<br/>Jabatan Agama Islam Perak
+                       Unit Data dan Pembangunan,<br/>Bahagian Pendidikan,<br/>Jabatan Agama Islam Perak
                      </p>
                   </div>
                 </div>
@@ -359,6 +363,7 @@ export default function App() {
              <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
           </div>
           <div>
+            {/* Tajuk Sidebar Disesuaikan */}
             <h1 className="text-[11px] sm:text-xs font-bold leading-tight uppercase">
               Kutipan data Maklumat Murid B40 & Asnaf<br/>
               Institusi Pendidikan Islam Negeri Perak
@@ -395,6 +400,7 @@ export default function App() {
         </nav>
         
         <div className="p-4 bg-slate-950 border-t border-slate-800 mt-auto relative z-10 text-center">
+          {/* Teks Jabatan Diletakkan Semula Di Sini */}
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed mb-3">
              Unit Data dan Pembangunan,<br/>
              Bahagian Pendidikan,<br/>
@@ -430,7 +436,7 @@ export default function App() {
         <main className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-50/50">
           <div className="max-w-7xl mx-auto h-full">
             {activeTab === 1 && <TabDashboard students={students} currentUser={currentUser} isLoading={isLoading} />}
-            {activeTab === 2 && <TabMaklumatMurid students={students} onSaveStudent={handleSaveStudent} onDeleteStudent={handleDeleteStudent} currentUser={currentUser} showNotification={showNotification} formatMyKid={formatMyKid} setDialog={setDialog} isLoading={isLoading} />}
+            {activeTab === 2 && <TabMaklumatMurid students={students} users={users} onSaveStudent={handleSaveStudent} onDeleteStudent={handleDeleteStudent} currentUser={currentUser} showNotification={showNotification} formatMyKid={formatMyKid} setDialog={setDialog} isLoading={isLoading} />}
             {activeTab === 4 && currentUser.role !== 'superadmin' && <TabProfilInstitusi currentUser={currentUser} onSaveUser={handleSaveUser} />}
             {activeTab === 5 && currentUser?.role === 'superadmin' && <TabKawalanPengguna users={users} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} isSystemActive={isSystemActive} setIsSystemActive={setIsSystemActive} setDialog={setDialog} isLoading={isLoading} />}
             {activeTab === 6 && currentUser?.role === 'superadmin' && <TabPelaporan students={students} users={users} isLoading={isLoading} />}
@@ -469,12 +475,13 @@ const TabDashboard = ({ students, currentUser, isLoading }) => {
   );
 };
 
-const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUser, showNotification, formatMyKid, setDialog, isLoading }) => {
+const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, currentUser, showNotification, formatMyKid, setDialog, isLoading }) => {
   const [filter, setFilter] = useState({ nama: '', mykid: '', tahun: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStudentData, setCurrentStudentData] = useState({});
   const [dialogState, setDialogState] = useState({ isOpen: false, data: null });
 
+  // Semakan adakah profil sekolah lengkap
   const isProfileIncomplete = currentUser.role !== 'superadmin' && (!currentUser.namaInstitusi || !currentUser.alamatInstitusi || !currentUser.daerah || !currentUser.kategoriSekolah);
 
   const showProfileAlert = () => {
@@ -487,10 +494,17 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
     .filter(s => s.tahun?.toLowerCase().includes(filter.tahun.toLowerCase()));
 
   const handleExportCSV = () => {
-    const header = ["No. MyKid/MyKad", "Nama_murid", "Tahun/Tingkatan", "Jantina", "Kategori B40", "Asnaf Fakir / Miskin"];
-    const csvData = filtered.map(s => [
-      `"${s.mykid || ''}"`, `"${s.nama || ''}"`, `"${s.tahun || ''}"`, `"${s.jantina || ''}"`, `"${s.kategoriB40 || ''}"`, `"${s.kategoriFakirMiskin || ''}"`
-    ]);
+    const header = ["No. MyKid/MyKad", "Nama_murid", "Tahun/Tingkatan", "Jantina", "Kategori B40", "Asnaf Fakir / Miskin", "Kod Sekolah", "Nama Sekolah", "Daerah"];
+    const csvData = filtered.map(s => {
+      const inst = users ? users.find(u => u.id === s.kodInstitusi) : null;
+      const kodSekolah = s.kodInstitusi || '';
+      const namaSekolah = inst ? inst.namaInstitusi : (currentUser.id === s.kodInstitusi ? currentUser.namaInstitusi : '');
+      const daerahSekolah = inst ? inst.daerah : (currentUser.id === s.kodInstitusi ? currentUser.daerah : '');
+      
+      return [
+        `"${s.mykid || ''}"`, `"${s.nama || ''}"`, `"${s.tahun || ''}"`, `"${s.jantina || ''}"`, `"${s.kategoriB40 || ''}"`, `"${s.kategoriFakirMiskin || ''}"`, `"${kodSekolah}"`, `"${namaSekolah}"`, `"${daerahSekolah}"`
+      ];
+    });
     const csvContent = [header, ...csvData].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -599,6 +613,13 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
             <tr>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">MyKid</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Penuh</th>
+              {currentUser.role === 'superadmin' && (
+                <>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kod Sekolah</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Sekolah</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Daerah</th>
+                </>
+              )}
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Tahun</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kategori B40</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Asnaf</th>
@@ -611,6 +632,13 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
                 <tr key={i} className="animate-pulse bg-slate-50/50">
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-24"></div></td>
                   <td className="px-4 py-4"><div className="h-4 bg-slate-200 rounded w-48"></div></td>
+                  {currentUser.role === 'superadmin' && (
+                    <>
+                      <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
+                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 rounded w-32"></div></td>
+                      <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-20"></div></td>
+                    </>
+                  )}
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
@@ -618,25 +646,35 @@ const TabMaklumatMurid = ({ students, onSaveStudent, onDeleteStudent, currentUse
                 </tr>
               ))
             ) : filtered.length > 0 ? (
-              filtered.map(s => (
-                <tr key={s.mykid} className="hover:bg-blue-50/50 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-900">{s.mykid}</td>
-                  <td className="px-4 py-3 text-sm text-slate-900 font-medium">{s.nama}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 && s.kategoriB40 !== 'Bukan B40' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriFakirMiskin || '-'}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-900 mx-2 p-1 rounded hover:bg-blue-100 transition-colors"><Edit className="w-4 h-4"/></button>
-                    <button onClick={() => handleDeleteClick(s)} className="text-red-600 hover:text-red-900 mx-2 p-1 rounded hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
-                  </td>
-                </tr>
-              ))
+              filtered.map(s => {
+                const inst = users ? users.find(u => u.id === s.kodInstitusi) : null;
+                return (
+                  <tr key={s.mykid} className="hover:bg-blue-50/50 transition-colors">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-900">{s.mykid}</td>
+                    <td className="px-4 py-3 text-sm text-slate-900 font-medium">{s.nama}</td>
+                    {currentUser.role === 'superadmin' && (
+                      <>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-blue-600 font-semibold">{s.kodInstitusi}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{inst ? inst.namaInstitusi : '-'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{inst ? inst.daerah : '-'}</td>
+                      </>
+                    )}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 && s.kategoriB40 !== 'Bukan B40' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriFakirMiskin || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-900 mx-2 p-1 rounded hover:bg-blue-100 transition-colors"><Edit className="w-4 h-4"/></button>
+                      <button onClick={() => handleDeleteClick(s)} className="text-red-600 hover:text-red-900 mx-2 p-1 rounded hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
-              <tr><td colSpan="6" className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
+              <tr><td colSpan={currentUser.role === 'superadmin' ? 9 : 6} className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
             )}
           </tbody>
         </table>
