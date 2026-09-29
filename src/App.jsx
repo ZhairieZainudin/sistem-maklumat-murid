@@ -489,9 +489,9 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
   };
 
   const filtered = (currentUser.role === 'superadmin' ? students : students.filter(s => s.kodInstitusi === currentUser.id))
-    .filter(s => s.nama?.toLowerCase().includes(filter.nama.toLowerCase()))
-    .filter(s => s.mykid?.includes(filter.mykid))
-    .filter(s => s.tahun?.toLowerCase().includes(filter.tahun.toLowerCase()));
+    .filter(s => (s.nama || '').toLowerCase().includes(filter.nama.toLowerCase()))
+    .filter(s => String(s.mykid || '').includes(filter.mykid))
+    .filter(s => String(s.tahun || '').toLowerCase().includes(filter.tahun.toLowerCase()));
 
   const handleExportCSV = () => {
     const header = ["No. MyKid/MyKad", "Nama_murid", "Tahun/Tingkatan", "Jantina", "Kategori B40", "Asnaf Fakir / Miskin", "Kod Sekolah", "Nama Sekolah", "Daerah"];
@@ -840,10 +840,10 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
 
   const filtered = users
     .filter(u => u.id !== 'SUPERADMIN')
-    .filter(u => u.id?.toLowerCase().includes(filter.id.toLowerCase()))
-    .filter(u => u.namaInstitusi?.toLowerCase().includes(filter.namaInstitusi.toLowerCase()))
-    .filter(u => u.daerah?.toLowerCase().includes(filter.daerah.toLowerCase()))
-    .filter(u => u.kategoriSekolah?.toLowerCase().includes(filter.kategoriSekolah.toLowerCase()));
+    .filter(u => (u.id || '').toLowerCase().includes(filter.id.toLowerCase()))
+    .filter(u => (u.namaInstitusi || '').toLowerCase().includes(filter.namaInstitusi.toLowerCase()))
+    .filter(u => (u.daerah || '').toLowerCase().includes(filter.daerah.toLowerCase()))
+    .filter(u => (u.kategoriSekolah || '').toLowerCase().includes(filter.kategoriSekolah.toLowerCase()));
 
   const handleEdit = (u) => {
     setCurrentUserData({...u});
