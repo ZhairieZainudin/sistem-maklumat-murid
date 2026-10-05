@@ -153,7 +153,7 @@ export default function App() {
   };
 
   const formatMyKid = (value) => {
-    const numbers = value.replace(/\D/g, '');
+    const numbers = String(value || '').replace(/\D/g, '');
     if (numbers.length <= 6) return numbers;
     if (numbers.length <= 8) return `${numbers.slice(0, 6)}-${numbers.slice(6)}`;
     return `${numbers.slice(0, 6)}-${numbers.slice(6, 8)}-${numbers.slice(8, 12)}`;
@@ -169,8 +169,8 @@ export default function App() {
         body: JSON.stringify(payload)
       });
       setStudents(prev => {
-        const exist = prev.find(s => s.mykid === studentData.mykid);
-        if(exist) return prev.map(s => s.mykid === studentData.mykid ? studentData : s);
+        const exist = prev.find(s => String(s.mykid) === String(studentData.mykid));
+        if(exist) return prev.map(s => String(s.mykid) === String(studentData.mykid) ? studentData : s);
         return [...prev, studentData];
       });
       setDialog({ isOpen: true, type: 'success', title: 'Berjaya', message: 'Data berjaya disimpan!', onConfirm: () => setDialog({isOpen: false}) });
@@ -188,7 +188,7 @@ export default function App() {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-      setStudents(prev => prev.filter(s => s.mykid !== mykid));
+      setStudents(prev => prev.filter(s => String(s.mykid) !== String(mykid)));
       showNotification('Rekod berjaya dipadam.');
     } catch(e) {
       setDialog({ isOpen: true, type: 'alert', title: 'Ralat', message: 'Gagal memadam rekod.', onConfirm: () => setDialog({isOpen: false}) });
@@ -478,10 +478,11 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
     setDialog({ isOpen: true, type: 'alert', title: 'Profil Tidak Lengkap', message: 'Sila ke menu "Profil Institusi" dan lengkapkan maklumat (Alamat, Daerah & Kategori) sebelum menguruskan data murid.', onConfirm: () => setDialog({isOpen: false})});
   };
 
+  // PEMBETULAN PENAPIS: TAMBAH STRING() UNTUK ELAK RALAT JIKA GOOGLE SHEETS HANTAR DATA ANGKA (INTEGER)
   const filtered = (currentUser.role === 'superadmin' ? students : students.filter(s => s.kodInstitusi === currentUser.id))
-    .filter(s => (s.nama || '').toLowerCase().includes(filter.nama.toLowerCase()))
-    .filter(s => String(s.mykid || '').includes(filter.mykid))
-    .filter(s => String(s.tahun || '').toLowerCase().includes(filter.tahun.toLowerCase()));
+    .filter(s => String(s.nama || '').toLowerCase().includes(String(filter.nama || '').toLowerCase()))
+    .filter(s => String(s.mykid || '').includes(String(filter.mykid || '')))
+    .filter(s => String(s.tahun || '').toLowerCase().includes(String(filter.tahun || '').toLowerCase()));
 
   const handleExportCSV = () => {
     const header = ["No. MyKid/MyKad", "Nama_murid", "Tahun/Tingkatan", "Jantina", "Kategori B40", "Asnaf Fakir / Miskin", "Kod Sekolah", "Nama Sekolah", "Daerah"];
@@ -828,12 +829,13 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
   const [currentUserData, setCurrentUserData] = useState({});
   const [dialogState, setDialogState] = useState({ isOpen: false, data: null });
 
+  // PEMBETULAN PENAPIS: TAMBAH STRING()
   const filtered = users
     .filter(u => u.id !== 'SUPERADMIN')
-    .filter(u => (u.id || '').toLowerCase().includes(filter.id.toLowerCase()))
-    .filter(u => (u.namaInstitusi || '').toLowerCase().includes(filter.namaInstitusi.toLowerCase()))
-    .filter(u => (u.daerah || '').toLowerCase().includes(filter.daerah.toLowerCase()))
-    .filter(u => (u.kategoriSekolah || '').toLowerCase().includes(filter.kategoriSekolah.toLowerCase()));
+    .filter(u => String(u.id || '').toLowerCase().includes(String(filter.id || '').toLowerCase()))
+    .filter(u => String(u.namaInstitusi || '').toLowerCase().includes(String(filter.namaInstitusi || '').toLowerCase()))
+    .filter(u => String(u.daerah || '').toLowerCase().includes(String(filter.daerah || '').toLowerCase()))
+    .filter(u => String(u.kategoriSekolah || '').toLowerCase().includes(String(filter.kategoriSekolah || '').toLowerCase()));
 
   const handleEdit = (u) => {
     setCurrentUserData({...u});
