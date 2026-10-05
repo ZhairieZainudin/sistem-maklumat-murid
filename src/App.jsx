@@ -116,6 +116,22 @@ export default function App() {
     
     setIsLoading(true);
     const normalizedId = regForm.id.replace(/\s+/g, '').toUpperCase();
+
+    // INI ADALAH KOD PAKSAAN (VALIDATION) UNTUK KOD SEKOLAH
+    // Mesti bermula dengan 3-4 Huruf (A-Z) dan diikuti 1-4 Nombor (0-9)
+    const kodSekolahPattern = /^[A-Z]{3,4}\d{1,4}$/;
+    
+    if (normalizedId !== 'SUPERADMIN' && !kodSekolahPattern.test(normalizedId)) {
+      setDialog({ 
+        isOpen: true, 
+        type: 'alert', 
+        title: 'Format Kod Tidak Sah', 
+        message: 'Pendaftaran ditolak! Sila masukkan Kod Sekolah yang betul bermula dengan huruf (Contoh: AXM1234, AZGA003). Penggunaan Nombor Kad Pengenalan adalah dilarang.', 
+        onConfirm: () => setDialog({isOpen: false}) 
+      });
+      setIsLoading(false);
+      return;
+    }
     
     if(users.find(u => u.id === normalizedId) || normalizedId === 'SUPERADMIN') {
         setDialog({ isOpen: true, type: 'alert', title: 'Ralat Pendaftaran', message: 'ID Institusi (Kod Sekolah) ini telah wujud. Sila log masuk.', onConfirm: () => setDialog({isOpen: false}) });
@@ -282,7 +298,7 @@ export default function App() {
                    <button type="button" onClick={() => setIsRegistering(false)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400"><X className="w-5 h-5"/></button>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Kod Institusi (ID Login)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Kod Institusi (Mesti Huruf & Nombor)</label>
                   <input type="text" required value={regForm.id} onChange={(e) => setRegForm({...regForm, id: e.target.value.toUpperCase()})} className="block w-full px-4 py-2 border-2 border-slate-200 rounded-lg shadow-sm focus:ring-blue-600 focus:border-blue-600 font-mono text-sm bg-slate-50 uppercase" placeholder="Contoh: AXM0000" />
                 </div>
                 <div>
@@ -478,7 +494,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
     setDialog({ isOpen: true, type: 'alert', title: 'Profil Tidak Lengkap', message: 'Sila ke menu "Profil Institusi" dan lengkapkan maklumat (Alamat, Daerah & Kategori) sebelum menguruskan data murid.', onConfirm: () => setDialog({isOpen: false})});
   };
 
-  // PEMBETULAN PENAPIS: TAMBAH STRING() UNTUK ELAK RALAT JIKA GOOGLE SHEETS HANTAR DATA ANGKA (INTEGER)
   const filtered = (currentUser.role === 'superadmin' ? students : students.filter(s => s.kodInstitusi === currentUser.id))
     .filter(s => String(s.nama || '').toLowerCase().includes(String(filter.nama || '').toLowerCase()))
     .filter(s => String(s.mykid || '').includes(String(filter.mykid || '')))
@@ -986,7 +1001,17 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
               <button onClick={() => {
                 if(!currentUserData.id || !currentUserData.namaInstitusi) return;
-                onSaveUser({...currentUserData, role: 'institusi'});
+                
+                // VALIDATION UNTUK SUPERADMIN DAFTAR SEKOLAH BARU
+                const normalizedId = currentUserData.id.replace(/\s+/g, '').toUpperCase();
+                const kodSekolahPattern = /^[A-Z]{3,4}\d{1,4}$/;
+                
+                if (normalizedId !== 'SUPERADMIN' && !kodSekolahPattern.test(normalizedId)) {
+                   setDialog({ isOpen: true, type: 'alert', title: 'Format Kod Tidak Sah', message: 'Sila masukkan Kod Sekolah yang betul bermula dengan huruf (Contoh: AXM1234).', onConfirm: () => setDialog({isOpen: false})});
+                   return; 
+                }
+
+                onSaveUser({...currentUserData, id: normalizedId, role: 'institusi'});
                 setIsModalOpen(false);
               }} className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition-colors">Simpan Institusi</button>
             </div>
