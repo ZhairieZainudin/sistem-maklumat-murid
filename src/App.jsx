@@ -246,10 +246,7 @@ export default function App() {
               <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
             </div>
           </div>
-          {/* Teks Tajuk Telah Disesuaikan Saiz dan Barisnya */}
-          <h2 className="text-center text-lg md:text-xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">
-            Kutipan data Maklumat Murid B40 & Asnaf<br/>Institusi Pendidikan Islam Negeri Perak
-          </h2>
+          <h2 className="text-center text-xl md:text-2xl font-extrabold text-white drop-shadow-md tracking-tight leading-snug mb-2 uppercase">Kutipan data Maklumat Murid B40 & Asnaf Institusi Pendidikan Islam Negeri Perak</h2>
         </div>
         
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -271,11 +268,9 @@ export default function App() {
                   <button type="button" onClick={() => setIsRegistering(true)} className="text-blue-700 font-bold hover:text-blue-800 hover:underline flex items-center justify-center gap-1 mx-auto w-full py-2 bg-blue-50 rounded-lg transition-colors mb-6">
                     <UserPlus className="w-4 h-4"/> Daftar Institusi Baharu
                   </button>
-                  
-                  {/* Teks Jabatan Di Bawah Form (Dipindahkan dari atas) */}
                   <div className="pt-4 mt-2 text-center border-t border-slate-100">
                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed">
-                       Unit Data dan Pembangunan,<br/>Bahagian Pendidikan,<br/>Jabatan Agama Islam Perak
+                       BAHAGIAN PENDIDIKAN, JABATAN AGAMA ISLAM PERAK
                      </p>
                   </div>
                 </div>
@@ -363,10 +358,9 @@ export default function App() {
              <img src="174_05jatanegeriperak150ppi.png" alt="Logo Perak" className="w-full h-full object-contain" />
           </div>
           <div>
-            {/* Tajuk Sidebar Disesuaikan */}
             <h1 className="text-[11px] sm:text-xs font-bold leading-tight uppercase">
-              Kutipan data Maklumat Murid B40 & Asnaf<br/>
-              Institusi Pendidikan Islam Negeri Perak
+              KUTIPAN DATA MAKLUMAT MURID B40 & ASNAF<br/>
+              INSTITUSI PENDIDIKAN ISLAM NEGERI PERAK
             </h1>
           </div>
         </div>
@@ -400,11 +394,8 @@ export default function App() {
         </nav>
         
         <div className="p-4 bg-slate-950 border-t border-slate-800 mt-auto relative z-10 text-center">
-          {/* Teks Jabatan Diletakkan Semula Di Sini */}
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed mb-3">
-             Unit Data dan Pembangunan,<br/>
-             Bahagian Pendidikan,<br/>
-             Jabatan Agama Islam Perak
+             Unit Data dan Pembangunan, Bahagian Pendidikan, Jabatan Agama Islam Perak
           </p>
           <button onClick={() => setIsLoggedIn(false)} className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-slate-700 rounded-xl shadow-sm text-sm font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
             <LogOut className="w-4 h-4"/> Log Keluar
@@ -481,7 +472,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
   const [currentStudentData, setCurrentStudentData] = useState({});
   const [dialogState, setDialogState] = useState({ isOpen: false, data: null });
 
-  // Semakan adakah profil sekolah lengkap
   const isProfileIncomplete = currentUser.role !== 'superadmin' && (!currentUser.namaInstitusi || !currentUser.alamatInstitusi || !currentUser.daerah || !currentUser.kategoriSekolah);
 
   const showProfileAlert = () => {
