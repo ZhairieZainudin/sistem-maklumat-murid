@@ -1026,21 +1026,19 @@ const TabPelaporan = ({ students, users, isLoading }) => {
   
   const daerahsList = ["BAGAN DATUK", "BAGAN SERAI", "BATU GAJAH", "GERIK", "IPOH", "KAMPAR", "KAMPONG GAJAH", "KUALA KANGSAR", "LENGGONG", "MANJUNG", "MUALLIM", "PARIT BUNTAR", "PENGKALAN HULU", "SELAMA", "SERI ISKANDAR", "TAIPING", "TAPAH", "TELUK INTAN"];
 
-  const kategoriSekolahList = [
-    { fullName: "SEKOLAH MENENGAH AGAMA RAKYAT (AXM)", shortCode: "AXM" },
-    { fullName: "MAAHAD TAHFIZ SWASTA (AZG)", shortCode: "AZG" },
-    { fullName: "PENGAJIAN PONDOK SWASTA (AZA)", shortCode: "AZA" },
-    { fullName: "SEKOLAH MENENGAH TAHFIZ DARUL RIDZUAN (AAC)", shortCode: "AAC" },
-    { fullName: "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK" },
-    { fullName: "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK" },
-    { fullName: "SEKOLAH RENDAH AGAMA RAKYAT SEPENUH MASA (AYR)", shortCode: "AYR" },
-    { fullName: "SEKOLAH RENDAH AGAMA RAKYAT INTEGRASI KAFA (AYQ)", shortCode: "AYQ" },
-    { fullName: "TADIKA ISLAM PERAK (AAK)", shortCode: "AAK" },
-    { fullName: "TADIKA ISLAM SWASTA (AZS)", shortCode: "AZS" }
+  // Menggunakan Nama Penuh Institusi sepertimana di dalam Borang Pendaftaran
+  const kategoriSekolahListFull = [
+    "SEKOLAH MENENGAH AGAMA RAKYAT (AXM)",
+    "MAAHAD TAHFIZ SWASTA (AZG)",
+    "PENGAJIAN PONDOK SWASTA (AZA)",
+    "SEKOLAH MENENGAH TAHFIZ DARUL RIDZUAN (AAC)",
+    "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)",
+    "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)",
+    "SEKOLAH RENDAH AGAMA RAKYAT SEPENUH MASA (AYR)",
+    "SEKOLAH RENDAH AGAMA RAKYAT INTEGRASI KAFA (AYQ)",
+    "TADIKA ISLAM PERAK (AAK)",
+    "TADIKA ISLAM SWASTA (AZS)"
   ];
-  
-  // Ambil senarai singkatan unik (elakkan SABK bertindih)
-  const uniqueKategori = [...new Set(kategoriSekolahList.map(k => k.shortCode))];
 
   // 1. DATA: JUMLAH MURID (DAERAH)
   const getDaerahOverallData = () => {
@@ -1053,13 +1051,12 @@ const TabPelaporan = ({ students, users, isLoading }) => {
   const daerahOverallData = getDaerahOverallData();
   const maxDaerahOverall = Math.max(...daerahOverallData.map(d => d.count), 1);
 
-  // 2. DATA: JUMLAH MURID (KATEGORI)
+  // 2. DATA: JUMLAH MURID (KATEGORI NAMA PENUH)
   const getKategoriOverallData = () => {
-    return uniqueKategori.map(shortCode => {
-      const matchingFullNames = kategoriSekolahList.filter(k => k.shortCode === shortCode).map(k => k.fullName);
-      const kUsers = users.filter(u => matchingFullNames.includes(u.kategoriSekolah)).map(u => u.id);
+    return kategoriSekolahListFull.map(fullName => {
+      const kUsers = users.filter(u => u.kategoriSekolah === fullName).map(u => u.id);
       const count = students.filter(s => kUsers.includes(s.kodInstitusi)).length;
-      return { label: shortCode, count };
+      return { label: fullName, count };
     });
   };
   const kategoriOverallData = getKategoriOverallData();
@@ -1077,7 +1074,20 @@ const TabPelaporan = ({ students, users, isLoading }) => {
   const asnafHeatmapData = getAsnafHeatmapData();
   const maxAsnaf = Math.max(...asnafHeatmapData.map(d => d.count), 1);
 
-  // FUNGSI WARNA UNTUK 3 TEMA
+  // 4. DATA: JUMLAH SEKOLAH YANG TELAH MENGISI (KATEGORI NAMA PENUH)
+  const getSekolahKategoriData = () => {
+    return kategoriSekolahListFull.map(fullName => {
+      // Cari kod sekolah berdaftar yang menepati kategori penuh ini
+      const kUsers = users.filter(u => u.id !== 'SUPERADMIN' && u.kategoriSekolah === fullName).map(u => u.id);
+      // Saring: Kira jumlah sekolah yang ada memasukkan sekurang-kurangnya 1 data murid (Telah Mengisi)
+      const count = kUsers.filter(kodSekolah => students.some(s => s.kodInstitusi === kodSekolah)).length;
+      return { label: fullName, count };
+    });
+  };
+  const sekolahKategoriData = getSekolahKategoriData();
+  const maxSekolahKategori = Math.max(...sekolahKategoriData.map(d => d.count), 1);
+
+  // FUNGSI WARNA UNTUK 4 TEMA
   const getHeatmapColor = (count, max, type = 'red') => {
     if (count === 0) return 'bg-slate-50 text-slate-400 border-slate-200';
     const ratio = count / max;
@@ -1094,6 +1104,12 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       if (ratio > 0.4) return 'bg-emerald-500 text-white shadow-sm border-emerald-600';
       if (ratio > 0.2) return 'bg-emerald-400 text-white shadow-sm border-emerald-500';
       return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    } else if (type === 'purple') {
+      if (ratio > 0.8) return 'bg-purple-700 text-white shadow-md border-purple-800';
+      if (ratio > 0.6) return 'bg-purple-600 text-white shadow-md border-purple-700';
+      if (ratio > 0.4) return 'bg-purple-500 text-white shadow-sm border-purple-600';
+      if (ratio > 0.2) return 'bg-purple-400 text-white shadow-sm border-purple-500';
+      return 'bg-purple-100 text-purple-800 border-purple-200';
     } else {
       if (ratio > 0.8) return 'bg-indigo-700 text-white shadow-md border-indigo-800';
       if (ratio > 0.6) return 'bg-indigo-600 text-white shadow-md border-indigo-700';
@@ -1125,6 +1141,10 @@ const TabPelaporan = ({ students, users, isLoading }) => {
 
   const handlePrint = () => { window.print(); };
 
+  // KIRAAN MURID JANTINA
+  const muridLelaki = students.filter(s => s.jantina === 'Lelaki').length;
+  const muridPerempuan = students.filter(s => s.jantina === 'Perempuan').length;
+
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
       <div className="flex justify-between items-center mb-6 border-b pb-4">
@@ -1132,18 +1152,27 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         <button onClick={handlePrint} className="px-4 py-2 rounded-lg bg-slate-800 text-white font-semibold text-sm hover:bg-slate-900 shadow-sm flex items-center gap-2"><FileDown className="w-4 h-4"/> Cetak A4</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm text-center">
-           <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-2">Jumlah Murid</h3>
-           {isLoading ? <div className="h-10 bg-blue-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-blue-600">{students.length}</p>}
+      {/* 5 KOTAK STATISTIK ATAS */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-10">
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm text-center">
+           <h3 className="text-[10px] sm:text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Jumlah Murid</h3>
+           {isLoading ? <div className="h-8 bg-blue-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-blue-600">{students.length}</p>}
         </div>
-        <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-100 shadow-sm text-center">
-           <h3 className="text-sm font-bold text-cyan-800 uppercase tracking-wider mb-2">Jumlah Asnaf (Fakir/Miskin)</h3>
-           {isLoading ? <div className="h-10 bg-cyan-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-cyan-600">{students.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length}</p>}
+        <div className="bg-cyan-50 p-4 rounded-xl border border-cyan-100 shadow-sm text-center">
+           <h3 className="text-[10px] sm:text-xs font-bold text-cyan-800 uppercase tracking-wider mb-2">Jumlah Asnaf</h3>
+           {isLoading ? <div className="h-8 bg-cyan-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-cyan-600">{students.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length}</p>}
         </div>
-        <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 shadow-sm text-center">
-           <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-2">Jumlah B40</h3>
-           {isLoading ? <div className="h-10 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}</p>}
+        <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm text-center">
+           <h3 className="text-[10px] sm:text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Jumlah B40</h3>
+           {isLoading ? <div className="h-8 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}</p>}
+        </div>
+        <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 shadow-sm text-center">
+           <h3 className="text-[10px] sm:text-xs font-bold text-teal-800 uppercase tracking-wider mb-2">Murid Lelaki</h3>
+           {isLoading ? <div className="h-8 bg-teal-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-teal-600">{muridLelaki}</p>}
+        </div>
+        <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 shadow-sm text-center">
+           <h3 className="text-[10px] sm:text-xs font-bold text-rose-800 uppercase tracking-wider mb-2">Murid Perempuan</h3>
+           {isLoading ? <div className="h-8 bg-rose-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-rose-600">{muridPerempuan}</p>}
         </div>
       </div>
 
@@ -1175,17 +1204,18 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
       </div>
 
-      {/* PETA HABA 2: JUMLAH KESELURUHAN (KATEGORI SEKOLAH) */}
+      {/* PETA HABA 2: JUMLAH KESELURUHAN MURID (KATEGORI NAMA PENUH) */}
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-emerald-600"/>
            <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Keseluruhan Murid Mengikut Kategori</h3>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+        {/* Menggunakan grid-cols-1 ke grid-cols-4 kerana nama institusi sangat panjang */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
            {kategoriOverallData.map(d => (
-             <div key={d.label} className={`p-3 rounded-lg border flex flex-col justify-center items-center text-center transition-all duration-300 ${getHeatmapColor(d.count, maxKategoriOverall, 'emerald')}`}>
-                <span className="text-[10px] font-bold uppercase mb-1 opacity-90">{d.label}</span>
-                <span className="text-xl font-black">{isLoading ? '-' : d.count}</span>
+             <div key={d.label} className={`p-4 rounded-xl border flex flex-col justify-between items-center text-center transition-all duration-300 ${getHeatmapColor(d.count, maxKategoriOverall, 'emerald')}`}>
+                <span className="text-[10px] sm:text-xs font-bold uppercase mb-3 opacity-90 leading-snug">{d.label}</span>
+                <span className="text-2xl font-black">{isLoading ? '-' : d.count}</span>
              </div>
            ))}
         </div>
@@ -1226,6 +1256,35 @@ const TabPelaporan = ({ students, users, isLoading }) => {
               <div className="w-4 h-4 rounded bg-red-500"></div>
               <div className="w-4 h-4 rounded bg-red-600"></div>
               <div className="w-4 h-4 rounded bg-red-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
+      </div>
+
+      {/* PETA HABA 4: JUMLAH SEKOLAH MENGISI DATA (KATEGORI) */}
+      <div className="mb-10 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+           <School className="w-5 h-5 text-purple-600"/>
+           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori</h3>
+        </div>
+        {/* Menggunakan grid-cols-1 ke grid-cols-4 kerana nama institusi sangat panjang */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+           {sekolahKategoriData.map(d => (
+             <div key={d.label} className={`p-4 rounded-xl border flex flex-col justify-between items-center text-center transition-all duration-300 ${getHeatmapColor(d.count, maxSekolahKategori, 'purple')}`}>
+                <span className="text-[10px] sm:text-xs font-bold uppercase mb-3 opacity-90 leading-snug">{d.label}</span>
+                <span className="text-2xl font-black">{isLoading ? '-' : d.count}</span>
+             </div>
+           ))}
+        </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-purple-100"></div>
+              <div className="w-4 h-4 rounded bg-purple-400"></div>
+              <div className="w-4 h-4 rounded bg-purple-500"></div>
+              <div className="w-4 h-4 rounded bg-purple-600"></div>
+              <div className="w-4 h-4 rounded bg-purple-700"></div>
            </div>
            <span>Tinggi</span>
         </div>
