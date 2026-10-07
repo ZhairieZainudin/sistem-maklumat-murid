@@ -116,7 +116,7 @@ export default function App() {
     
     setIsLoading(true);
     const normalizedId = regForm.id.replace(/\s+/g, '').toUpperCase();
-
+    
     // INI ADALAH KOD PAKSAAN (VALIDATION) UNTUK KOD SEKOLAH
     // Mesti bermula dengan 3-4 Huruf (A-Z) dan diikuti 1-4 Nombor (0-9)
     const kodSekolahPattern = /^[A-Z]{3,4}\d{1,4}$/;
@@ -132,7 +132,7 @@ export default function App() {
       setIsLoading(false);
       return;
     }
-    
+
     if(users.find(u => u.id === normalizedId) || normalizedId === 'SUPERADMIN') {
         setDialog({ isOpen: true, type: 'alert', title: 'Ralat Pendaftaran', message: 'ID Institusi (Kod Sekolah) ini telah wujud. Sila log masuk.', onConfirm: () => setDialog({isOpen: false}) });
         setIsLoading(false);
@@ -1027,26 +1027,86 @@ const TabPelaporan = ({ students, users, isLoading }) => {
   
   const daerahsList = ["BAGAN DATUK", "BAGAN SERAI", "BATU GAJAH", "GERIK", "IPOH", "KAMPAR", "KAMPONG GAJAH", "KUALA KANGSAR", "LENGGONG", "MANJUNG", "MUALLIM", "PARIT BUNTAR", "PENGKALAN HULU", "SELAMA", "SERI ISKANDAR", "TAIPING", "TAPAH", "TELUK INTAN"];
 
-  const getHeatmapData = () => {
+  // Senarai Kategori Sekolah Singkat untuk Heatmap
+  const kategoriSekolahList = [
+    { fullName: "SEKOLAH MENENGAH AGAMA RAKYAT (AXM)", shortCode: "AXM" },
+    { fullName: "MAAHAD TAHFIZ SWASTA (AZG)", shortCode: "AZG" },
+    { fullName: "PENGAJIAN PONDOK SWASTA (AZA)", shortCode: "AZA" },
+    { fullName: "SEKOLAH MENENGAH TAHFIZ DARUL RIDZUAN (AAC)", shortCode: "AAC" },
+    { fullName: "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(M)" }, // Anggapan
+    { fullName: "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(R)" }, // Anggapan
+    { fullName: "SEKOLAH RENDAH AGAMA RAKYAT SEPENUH MASA (AYR)", shortCode: "AYR" },
+    { fullName: "SEKOLAH RENDAH AGAMA RAKYAT INTEGRASI KAFA (AYQ)", shortCode: "AYQ" },
+    { fullName: "TADIKA ISLAM PERAK (AAK)", shortCode: "AAK" },
+    { fullName: "TADIKA ISLAM SWASTA (AZS)", shortCode: "AZS" }
+  ];
+
+  // --- HEATMAP ASNAF (SEDIA ADA) ---
+  const getAsnafHeatmapData = () => {
     return daerahsList.map(d => {
       const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
       const dStudents = students.filter(s => dUsers.includes(s.kodInstitusi));
       const asnafCount = dStudents.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length;
-      return { daerah: d, asnaf: asnafCount };
+      return { label: d, count: asnafCount };
     });
   };
 
-  const heatmapData = getHeatmapData();
-  const maxAsnaf = Math.max(...heatmapData.map(d => d.asnaf), 1);
+  const asnafHeatmapData = getAsnafHeatmapData();
+  const maxAsnaf = Math.max(...asnafHeatmapData.map(d => d.count), 1);
 
-  const getHeatmapColor = (count, max) => {
+  // --- HEATMAP KESELURUHAN (BAHARU) ---
+  // Kita jana data bersilangan (Daerah vs Kategori)
+  const getCrossHeatmapData = () => {
+    return daerahsList.map(daerah => {
+      // Ambil semua kod sekolah dalam daerah ini
+      const sekolahDiDaerah = users.filter(u => u.daerah === daerah);
+      
+      const countsByCategory = {};
+      kategoriSekolahList.forEach(kategori => {
+        // Cari kod sekolah dalam daerah ini yang mempunyai kategori spesifik ini
+        const kodSekolahKategori = sekolahDiDaerah
+           .filter(u => u.kategoriSekolah === kategori.fullName)
+           .map(u => u.id);
+        
+        // Kira jumlah semua pelajar dalam senarai kod sekolah tersebut
+        const totalMurid = students.filter(s => kodSekolahKategori.includes(s.kodInstitusi)).length;
+        
+        countsByCategory[kategori.shortCode] = totalMurid;
+      });
+
+      return { daerah, countsByCategory };
+    });
+  };
+
+  const crossHeatmapData = getCrossHeatmapData();
+  
+  // Cari nilai maksimum keseluruhan untuk pewarnaan Heatmap Baharu
+  let maxTotalMurid = 1;
+  crossHeatmapData.forEach(row => {
+    Object.values(row.countsByCategory).forEach(count => {
+       if (count > maxTotalMurid) maxTotalMurid = count;
+    });
+  });
+
+  // Fungsi Warna (Dikongsi)
+  const getHeatmapColor = (count, max, type = 'red') => {
     if (count === 0) return 'bg-slate-50 text-slate-400 border-slate-200';
     const ratio = count / max;
-    if (ratio > 0.8) return 'bg-red-700 text-white shadow-md border-red-800';
-    if (ratio > 0.6) return 'bg-red-600 text-white shadow-md border-red-700';
-    if (ratio > 0.4) return 'bg-red-500 text-white shadow-sm border-red-600';
-    if (ratio > 0.2) return 'bg-red-400 text-white shadow-sm border-red-500';
-    return 'bg-red-100 text-red-800 border-red-200';
+    
+    if (type === 'red') {
+      if (ratio > 0.8) return 'bg-red-700 text-white shadow-md border-red-800';
+      if (ratio > 0.6) return 'bg-red-600 text-white shadow-md border-red-700';
+      if (ratio > 0.4) return 'bg-red-500 text-white shadow-sm border-red-600';
+      if (ratio > 0.2) return 'bg-red-400 text-white shadow-sm border-red-500';
+      return 'bg-red-100 text-red-800 border-red-200';
+    } else {
+       // Peta Haba Keseluruhan (Guna Warna Biru/Indigo)
+      if (ratio > 0.8) return 'bg-indigo-700 text-white shadow-md border-indigo-800';
+      if (ratio > 0.6) return 'bg-indigo-600 text-white shadow-md border-indigo-700';
+      if (ratio > 0.4) return 'bg-indigo-500 text-white shadow-sm border-indigo-600';
+      if (ratio > 0.2) return 'bg-indigo-400 text-white shadow-sm border-indigo-500';
+      return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    }
   };
 
   const getStats = () => {
@@ -1093,17 +1153,67 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
       </div>
 
-      {/* PETA HABA ASNAF */}
+      {/* PETA HABA KESELURUHAN (DAERAH VS KATEGORI) */}
+      <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+        <div className="flex items-center gap-2 mb-4 min-w-max">
+           <Map className="w-5 h-5 text-indigo-600"/>
+           <h3 className="text-lg font-bold text-slate-800">Peta Haba Taburan Jumlah Murid Keseluruhan (Daerah & Kategori)</h3>
+        </div>
+        
+        <table className="min-w-max w-full border-collapse">
+            <thead>
+                <tr>
+                    <th className="p-2 border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 text-left w-32">Daerah</th>
+                    {kategoriSekolahList.map(kat => (
+                       <th key={kat.shortCode} className="p-2 border border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-600 text-center uppercase" title={kat.fullName}>
+                          {kat.shortCode}
+                       </th>
+                    ))}
+                </tr>
+            </thead>
+            <tbody>
+                {crossHeatmapData.map(row => (
+                    <tr key={row.daerah}>
+                        <td className="p-2 border border-slate-200 text-xs font-bold text-slate-700 bg-white">{row.daerah}</td>
+                        {kategoriSekolahList.map(kat => {
+                            const count = row.countsByCategory[kat.shortCode];
+                            return (
+                                <td key={`${row.daerah}-${kat.shortCode}`} className={`p-2 border border-slate-200 text-center transition-all duration-300 ${getHeatmapColor(count, maxTotalMurid, 'indigo')}`}>
+                                    <span className="text-sm font-bold">{isLoading ? '-' : (count > 0 ? count : '')}</span>
+                                </td>
+                            );
+                        })}
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-indigo-100"></div>
+              <div className="w-4 h-4 rounded bg-indigo-400"></div>
+              <div className="w-4 h-4 rounded bg-indigo-500"></div>
+              <div className="w-4 h-4 rounded bg-indigo-600"></div>
+              <div className="w-4 h-4 rounded bg-indigo-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
+      </div>
+
+
+      {/* PETA HABA ASNAF (DAERAH SAHAJA) */}
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-red-600"/>
-           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Asnaf Daerah</h3>
+           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Asnaf Mengikut Daerah</h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-           {heatmapData.map(d => (
-             <div key={d.daerah} className={`p-3 rounded-lg border flex flex-col justify-center items-center text-center transition-all duration-300 ${getHeatmapColor(d.asnaf, maxAsnaf)}`}>
-                <span className="text-[10px] font-bold uppercase mb-1 opacity-90">{d.daerah}</span>
-                <span className="text-xl font-black">{isLoading ? '-' : d.asnaf}</span>
+           {asnafHeatmapData.map(d => (
+             <div key={d.label} className={`p-3 rounded-lg border flex flex-col justify-center items-center text-center transition-all duration-300 ${getHeatmapColor(d.count, maxAsnaf, 'red')}`}>
+                <span className="text-[10px] font-bold uppercase mb-1 opacity-90">{d.label}</span>
+                <span className="text-xl font-black">{isLoading ? '-' : d.count}</span>
              </div>
            ))}
         </div>
