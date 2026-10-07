@@ -116,7 +116,7 @@ export default function App() {
     
     setIsLoading(true);
     const normalizedId = regForm.id.replace(/\s+/g, '').toUpperCase();
-    
+
     // INI ADALAH KOD PAKSAAN (VALIDATION) UNTUK KOD SEKOLAH
     // Mesti bermula dengan 3-4 Huruf (A-Z) dan diikuti 1-4 Nombor (0-9)
     const kodSekolahPattern = /^[A-Z]{3,4}\d{1,4}$/;
@@ -132,7 +132,7 @@ export default function App() {
       setIsLoading(false);
       return;
     }
-
+    
     if(users.find(u => u.id === normalizedId) || normalizedId === 'SUPERADMIN') {
         setDialog({ isOpen: true, type: 'alert', title: 'Ralat Pendaftaran', message: 'ID Institusi (Kod Sekolah) ini telah wujud. Sila log masuk.', onConfirm: () => setDialog({isOpen: false}) });
         setIsLoading(false);
@@ -844,7 +844,6 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
   const [currentUserData, setCurrentUserData] = useState({});
   const [dialogState, setDialogState] = useState({ isOpen: false, data: null });
 
-  // PEMBETULAN PENAPIS: TAMBAH STRING()
   const filtered = users
     .filter(u => u.id !== 'SUPERADMIN')
     .filter(u => String(u.id || '').toLowerCase().includes(String(filter.id || '').toLowerCase()))
@@ -1033,8 +1032,8 @@ const TabPelaporan = ({ students, users, isLoading }) => {
     { fullName: "MAAHAD TAHFIZ SWASTA (AZG)", shortCode: "AZG" },
     { fullName: "PENGAJIAN PONDOK SWASTA (AZA)", shortCode: "AZA" },
     { fullName: "SEKOLAH MENENGAH TAHFIZ DARUL RIDZUAN (AAC)", shortCode: "AAC" },
-    { fullName: "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(M)" }, // Anggapan
-    { fullName: "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(R)" }, // Anggapan
+    { fullName: "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(M)" },
+    { fullName: "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(R)" },
     { fullName: "SEKOLAH RENDAH AGAMA RAKYAT SEPENUH MASA (AYR)", shortCode: "AYR" },
     { fullName: "SEKOLAH RENDAH AGAMA RAKYAT INTEGRASI KAFA (AYQ)", shortCode: "AYQ" },
     { fullName: "TADIKA ISLAM PERAK (AAK)", shortCode: "AAK" },
@@ -1055,22 +1054,17 @@ const TabPelaporan = ({ students, users, isLoading }) => {
   const maxAsnaf = Math.max(...asnafHeatmapData.map(d => d.count), 1);
 
   // --- HEATMAP KESELURUHAN (BAHARU) ---
-  // Kita jana data bersilangan (Daerah vs Kategori)
   const getCrossHeatmapData = () => {
     return daerahsList.map(daerah => {
-      // Ambil semua kod sekolah dalam daerah ini
       const sekolahDiDaerah = users.filter(u => u.daerah === daerah);
       
       const countsByCategory = {};
       kategoriSekolahList.forEach(kategori => {
-        // Cari kod sekolah dalam daerah ini yang mempunyai kategori spesifik ini
         const kodSekolahKategori = sekolahDiDaerah
            .filter(u => u.kategoriSekolah === kategori.fullName)
            .map(u => u.id);
         
-        // Kira jumlah semua pelajar dalam senarai kod sekolah tersebut
         const totalMurid = students.filter(s => kodSekolahKategori.includes(s.kodInstitusi)).length;
-        
         countsByCategory[kategori.shortCode] = totalMurid;
       });
 
@@ -1080,7 +1074,6 @@ const TabPelaporan = ({ students, users, isLoading }) => {
 
   const crossHeatmapData = getCrossHeatmapData();
   
-  // Cari nilai maksimum keseluruhan untuk pewarnaan Heatmap Baharu
   let maxTotalMurid = 1;
   crossHeatmapData.forEach(row => {
     Object.values(row.countsByCategory).forEach(count => {
@@ -1088,7 +1081,6 @@ const TabPelaporan = ({ students, users, isLoading }) => {
     });
   });
 
-  // Fungsi Warna (Dikongsi)
   const getHeatmapColor = (count, max, type = 'red') => {
     if (count === 0) return 'bg-slate-50 text-slate-400 border-slate-200';
     const ratio = count / max;
@@ -1100,7 +1092,6 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       if (ratio > 0.2) return 'bg-red-400 text-white shadow-sm border-red-500';
       return 'bg-red-100 text-red-800 border-red-200';
     } else {
-       // Peta Haba Keseluruhan (Guna Warna Biru/Indigo)
       if (ratio > 0.8) return 'bg-indigo-700 text-white shadow-md border-indigo-800';
       if (ratio > 0.6) return 'bg-indigo-600 text-white shadow-md border-indigo-700';
       if (ratio > 0.4) return 'bg-indigo-500 text-white shadow-sm border-indigo-600';
