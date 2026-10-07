@@ -1026,61 +1026,58 @@ const TabPelaporan = ({ students, users, isLoading }) => {
   
   const daerahsList = ["BAGAN DATUK", "BAGAN SERAI", "BATU GAJAH", "GERIK", "IPOH", "KAMPAR", "KAMPONG GAJAH", "KUALA KANGSAR", "LENGGONG", "MANJUNG", "MUALLIM", "PARIT BUNTAR", "PENGKALAN HULU", "SELAMA", "SERI ISKANDAR", "TAIPING", "TAPAH", "TELUK INTAN"];
 
-  // Senarai Kategori Sekolah Singkat untuk Heatmap
   const kategoriSekolahList = [
     { fullName: "SEKOLAH MENENGAH AGAMA RAKYAT (AXM)", shortCode: "AXM" },
     { fullName: "MAAHAD TAHFIZ SWASTA (AZG)", shortCode: "AZG" },
     { fullName: "PENGAJIAN PONDOK SWASTA (AZA)", shortCode: "AZA" },
     { fullName: "SEKOLAH MENENGAH TAHFIZ DARUL RIDZUAN (AAC)", shortCode: "AAC" },
-    { fullName: "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(M)" },
-    { fullName: "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK(R)" },
+    { fullName: "SEKOLAH MENENGAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK" },
+    { fullName: "SEKOLAH RENDAH AGAMA BANTUAN KERAJAAN (SABK)", shortCode: "SABK" },
     { fullName: "SEKOLAH RENDAH AGAMA RAKYAT SEPENUH MASA (AYR)", shortCode: "AYR" },
     { fullName: "SEKOLAH RENDAH AGAMA RAKYAT INTEGRASI KAFA (AYQ)", shortCode: "AYQ" },
     { fullName: "TADIKA ISLAM PERAK (AAK)", shortCode: "AAK" },
     { fullName: "TADIKA ISLAM SWASTA (AZS)", shortCode: "AZS" }
   ];
+  
+  // Ambil senarai singkatan unik (elakkan SABK bertindih)
+  const uniqueKategori = [...new Set(kategoriSekolahList.map(k => k.shortCode))];
 
-  // --- HEATMAP ASNAF (SEDIA ADA) ---
+  // 1. DATA: JUMLAH MURID (DAERAH)
+  const getDaerahOverallData = () => {
+    return daerahsList.map(d => {
+      const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
+      const count = students.filter(s => dUsers.includes(s.kodInstitusi)).length;
+      return { label: d, count };
+    });
+  };
+  const daerahOverallData = getDaerahOverallData();
+  const maxDaerahOverall = Math.max(...daerahOverallData.map(d => d.count), 1);
+
+  // 2. DATA: JUMLAH MURID (KATEGORI)
+  const getKategoriOverallData = () => {
+    return uniqueKategori.map(shortCode => {
+      const matchingFullNames = kategoriSekolahList.filter(k => k.shortCode === shortCode).map(k => k.fullName);
+      const kUsers = users.filter(u => matchingFullNames.includes(u.kategoriSekolah)).map(u => u.id);
+      const count = students.filter(s => kUsers.includes(s.kodInstitusi)).length;
+      return { label: shortCode, count };
+    });
+  };
+  const kategoriOverallData = getKategoriOverallData();
+  const maxKategoriOverall = Math.max(...kategoriOverallData.map(d => d.count), 1);
+
+  // 3. DATA: ASNAF (DAERAH)
   const getAsnafHeatmapData = () => {
     return daerahsList.map(d => {
       const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
       const dStudents = students.filter(s => dUsers.includes(s.kodInstitusi));
-      const asnafCount = dStudents.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length;
-      return { label: d, count: asnafCount };
+      const count = dStudents.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length;
+      return { label: d, count };
     });
   };
-
   const asnafHeatmapData = getAsnafHeatmapData();
   const maxAsnaf = Math.max(...asnafHeatmapData.map(d => d.count), 1);
 
-  // --- HEATMAP KESELURUHAN (BAHARU) ---
-  const getCrossHeatmapData = () => {
-    return daerahsList.map(daerah => {
-      const sekolahDiDaerah = users.filter(u => u.daerah === daerah);
-      
-      const countsByCategory = {};
-      kategoriSekolahList.forEach(kategori => {
-        const kodSekolahKategori = sekolahDiDaerah
-           .filter(u => u.kategoriSekolah === kategori.fullName)
-           .map(u => u.id);
-        
-        const totalMurid = students.filter(s => kodSekolahKategori.includes(s.kodInstitusi)).length;
-        countsByCategory[kategori.shortCode] = totalMurid;
-      });
-
-      return { daerah, countsByCategory };
-    });
-  };
-
-  const crossHeatmapData = getCrossHeatmapData();
-  
-  let maxTotalMurid = 1;
-  crossHeatmapData.forEach(row => {
-    Object.values(row.countsByCategory).forEach(count => {
-       if (count > maxTotalMurid) maxTotalMurid = count;
-    });
-  });
-
+  // FUNGSI WARNA UNTUK 3 TEMA
   const getHeatmapColor = (count, max, type = 'red') => {
     if (count === 0) return 'bg-slate-50 text-slate-400 border-slate-200';
     const ratio = count / max;
@@ -1091,6 +1088,12 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       if (ratio > 0.4) return 'bg-red-500 text-white shadow-sm border-red-600';
       if (ratio > 0.2) return 'bg-red-400 text-white shadow-sm border-red-500';
       return 'bg-red-100 text-red-800 border-red-200';
+    } else if (type === 'emerald') {
+      if (ratio > 0.8) return 'bg-emerald-700 text-white shadow-md border-emerald-800';
+      if (ratio > 0.6) return 'bg-emerald-600 text-white shadow-md border-emerald-700';
+      if (ratio > 0.4) return 'bg-emerald-500 text-white shadow-sm border-emerald-600';
+      if (ratio > 0.2) return 'bg-emerald-400 text-white shadow-sm border-emerald-500';
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
     } else {
       if (ratio > 0.8) return 'bg-indigo-700 text-white shadow-md border-indigo-800';
       if (ratio > 0.6) return 'bg-indigo-600 text-white shadow-md border-indigo-700';
@@ -1129,7 +1132,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         <button onClick={handlePrint} className="px-4 py-2 rounded-lg bg-slate-800 text-white font-semibold text-sm hover:bg-slate-900 shadow-sm flex items-center gap-2"><FileDown className="w-4 h-4"/> Cetak A4</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm text-center">
            <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-2">Jumlah Murid</h3>
            {isLoading ? <div className="h-10 bg-blue-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-4xl font-extrabold text-blue-600">{students.length}</p>}
@@ -1144,41 +1147,20 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
       </div>
 
-      {/* PETA HABA KESELURUHAN (DAERAH VS KATEGORI) */}
-      <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-        <div className="flex items-center gap-2 mb-4 min-w-max">
+      {/* PETA HABA 1: JUMLAH KESELURUHAN (DAERAH) */}
+      <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-indigo-600"/>
-           <h3 className="text-lg font-bold text-slate-800">Peta Haba Taburan Jumlah Murid Keseluruhan (Daerah & Kategori)</h3>
+           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Keseluruhan Murid Mengikut Daerah</h3>
         </div>
-        
-        <table className="min-w-max w-full border-collapse">
-            <thead>
-                <tr>
-                    <th className="p-2 border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 text-left w-32">Daerah</th>
-                    {kategoriSekolahList.map(kat => (
-                       <th key={kat.shortCode} className="p-2 border border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-600 text-center uppercase" title={kat.fullName}>
-                          {kat.shortCode}
-                       </th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {crossHeatmapData.map(row => (
-                    <tr key={row.daerah}>
-                        <td className="p-2 border border-slate-200 text-xs font-bold text-slate-700 bg-white">{row.daerah}</td>
-                        {kategoriSekolahList.map(kat => {
-                            const count = row.countsByCategory[kat.shortCode];
-                            return (
-                                <td key={`${row.daerah}-${kat.shortCode}`} className={`p-2 border border-slate-200 text-center transition-all duration-300 ${getHeatmapColor(count, maxTotalMurid, 'indigo')}`}>
-                                    <span className="text-sm font-bold">{isLoading ? '-' : (count > 0 ? count : '')}</span>
-                                </td>
-                            );
-                        })}
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+           {daerahOverallData.map(d => (
+             <div key={d.label} className={`p-3 rounded-lg border flex flex-col justify-center items-center text-center transition-all duration-300 ${getHeatmapColor(d.count, maxDaerahOverall, 'indigo')}`}>
+                <span className="text-[10px] font-bold uppercase mb-1 opacity-90">{d.label}</span>
+                <span className="text-xl font-black">{isLoading ? '-' : d.count}</span>
+             </div>
+           ))}
+        </div>
         <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
            <span>Rendah</span>
            <div className="flex gap-1">
@@ -1193,9 +1175,36 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
       </div>
 
-
-      {/* PETA HABA ASNAF (DAERAH SAHAJA) */}
+      {/* PETA HABA 2: JUMLAH KESELURUHAN (KATEGORI SEKOLAH) */}
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+           <Map className="w-5 h-5 text-emerald-600"/>
+           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Keseluruhan Murid Mengikut Kategori</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+           {kategoriOverallData.map(d => (
+             <div key={d.label} className={`p-3 rounded-lg border flex flex-col justify-center items-center text-center transition-all duration-300 ${getHeatmapColor(d.count, maxKategoriOverall, 'emerald')}`}>
+                <span className="text-[10px] font-bold uppercase mb-1 opacity-90">{d.label}</span>
+                <span className="text-xl font-black">{isLoading ? '-' : d.count}</span>
+             </div>
+           ))}
+        </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-emerald-100"></div>
+              <div className="w-4 h-4 rounded bg-emerald-400"></div>
+              <div className="w-4 h-4 rounded bg-emerald-500"></div>
+              <div className="w-4 h-4 rounded bg-emerald-600"></div>
+              <div className="w-4 h-4 rounded bg-emerald-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
+      </div>
+
+      {/* PETA HABA 3: ASNAF FAKIR/MISKIN (DAERAH) */}
+      <div className="mb-10 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-red-600"/>
            <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Asnaf Mengikut Daerah</h3>
@@ -1222,10 +1231,11 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
       </div>
 
+      {/* JADUAL STATISTIK */}
       <div className="mb-6 flex gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
         <select value={reportType} onChange={(e) => setReportType(e.target.value)} className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-slate-700">
-          <option value="daerah">Pecahan Mengikut Daerah</option>
-          <option value="kategori">Pecahan Mengikut Kategori Sekolah</option>
+          <option value="daerah">Jadual Pecahan Mengikut Daerah</option>
+          <option value="kategori">Jadual Pecahan Mengikut Kategori Sekolah</option>
         </select>
       </div>
 
