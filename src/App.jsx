@@ -704,9 +704,10 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Tahun/Tingkatan</label>
                   <input type="text" value={currentStudentData.tahun || ''} onChange={(e) => setCurrentStudentData({...currentStudentData, tahun: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
                 </div>
-                <div>
+               <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Jantina</label>
-                  <select value={currentStudentData.jantina || 'Lelaki'} onChange={(e) => setCurrentStudentData({...currentStudentData, jantina: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                  <select value={currentStudentData.jantina || ''} onChange={(e) => setCurrentStudentData({...currentStudentData, jantina: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="">-- Pilih --</option>
                     <option value="Lelaki">Lelaki</option>
                     <option value="Perempuan">Perempuan</option>
                   </select>
@@ -739,7 +740,20 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
             </div>
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
               <button onClick={() => {
-                if(!currentStudentData.mykid) return;
+                const { mykid, nama, tahun, jantina, kategoriB40, kategoriFakirMiskin } = currentStudentData;
+                
+                // PENGESAHAN (VALIDATION) SEMUA MEDAN WAJIB DIISI
+                if (!mykid || !nama || !tahun || !jantina || !kategoriB40 || !kategoriFakirMiskin) {
+                  setDialog({ 
+                    isOpen: true, 
+                    type: 'alert', 
+                    title: 'Maklumat Tidak Lengkap', 
+                    message: 'Pendaftaran Gagal! Sila lengkapkan SEMUA ruangan (MyKid, Nama, Tahun, Jantina, Kategori B40 & Asnaf) sebelum menyimpan rekod.', 
+                    onConfirm: () => setDialog({isOpen: false}) 
+                  });
+                  return; // Hentikan fungsi simpan jika ada kotak yang kosong
+                }
+
                 onSaveStudent({...currentStudentData, kodInstitusi: currentStudentData.kodInstitusi || currentUser.id});
                 setIsModalOpen(false);
               }} className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition-colors">Simpan Rekod</button>
