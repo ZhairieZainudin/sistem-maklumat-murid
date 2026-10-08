@@ -1178,7 +1178,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-indigo-600"/>
-           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Keseluruhan Murid Mengikut Daerah</h3>
+           <h3 className="text-lg font-bold text-slate-800">Taburan Keseluruhan Murid Mengikut Daerah</h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
            {daerahOverallData.map(d => (
@@ -1206,7 +1206,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-emerald-600"/>
-           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Keseluruhan Murid Mengikut Kategori</h3>
+           <h3 className="text-lg font-bold text-slate-800">Taburan Keseluruhan Murid Mengikut Kategori</h3>
         </div>
         {/* Menggunakan grid-cols-1 ke grid-cols-4 kerana nama institusi sangat panjang */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1235,7 +1235,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       <div className="mb-10 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-red-600"/>
-           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Taburan Asnaf Mengikut Daerah</h3>
+           <h3 className="text-lg font-bold text-slate-800">Taburan Asnaf Mengikut Daerah</h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
            {asnafHeatmapData.map(d => (
@@ -1263,7 +1263,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
       <div className="mb-10 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <School className="w-5 h-5 text-purple-600"/>
-           <h3 className="text-lg font-bold text-slate-800">Peta Haba (Heatmap) Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori</h3>
+           <h3 className="text-lg font-bold text-slate-800">Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori</h3>
         </div>
         {/* Menggunakan grid-cols-1 ke grid-cols-4 kerana nama institusi sangat panjang */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
