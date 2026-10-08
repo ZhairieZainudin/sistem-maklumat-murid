@@ -652,10 +652,10 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                 </tr>
               ))
             ) : filtered.length > 0 ? (
-              filtered.map(s => {
+              filtered.map((s, index) => {
                 const inst = users ? users.find(u => u.id === s.kodInstitusi) : null;
                 return (
-                  <tr key={s.mykid} className="hover:bg-blue-50/50 transition-colors">
+                  <tr key={`${s.mykid}-${index}`} className="hover:bg-blue-50/50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-900">{s.mykid}</td>
                     <td className="px-4 py-3 text-sm text-slate-900 font-medium">{s.nama}</td>
                     {currentUser.role === 'superadmin' && (
@@ -726,7 +726,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                           <option value="B2">B2 (RM2501 - RM3170)</option>
                           <option value="B3">B3 (RM3171 - RM3970)</option>
                           <option value="B4">B4 (RM3971 - RM4850)</option>
-                          <option value="Bukan B40">Bukan B40</option>
                         </select>
                      </div>
                      <div>
@@ -735,7 +734,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                           <option value="">-- Pilih --</option>
                           <option value="Fakir">Fakir</option>
                           <option value="Miskin">Miskin</option>
-                          <option value="Bukan Asnaf">Bukan Asnaf</option>
                         </select>
                      </div>
                    </div>
@@ -915,8 +913,8 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
                 </tr>
               ))
             ) : filtered.length > 0 ? (
-              filtered.map(u => (
-                <tr key={u.id} className="hover:bg-blue-50/50 transition-colors">
+              filtered.map((u, index) => (
+                <tr key={`${u.id}-${index}`} className="hover:bg-blue-50/50 transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-bold text-blue-700">{u.id}</td>
                   <td className="px-4 py-3 text-sm font-medium text-slate-900">{u.namaInstitusi}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{u.daerah}</td>
