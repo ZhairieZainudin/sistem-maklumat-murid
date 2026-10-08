@@ -1169,7 +1169,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
     Tulis menggunakan laras bahasa Melayu formal, rasmi, dan mudah difahami. Gunakan gaya tulisan profesional kerajaan. Jangan hasilkan laporan yang terlalu panjang. (Gunakan simbol ** untuk tulisan tebal).`;
 
     const payload = { contents: [{ parts: [{ text: systemPrompt }] }] };
-    const apiKey = "const apiKey = import.meta.env.VITE_GEMINI_API_KEY;"; // Leave this as empty string for integration
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Leave this as empty string for integration
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
     try {
