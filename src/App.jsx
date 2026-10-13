@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, FileDown, Upload, Trash2, Edit, Save, X, RefreshCw, CheckCircle, AlertCircle, AlertTriangle, LogOut, School, UserPlus, LogIn, Map } from 'lucide-react';
+import { Search, Plus, FileDown, Upload, Trash2, Edit, Save, X, RefreshCw, CheckCircle, AlertCircle, AlertTriangle, LogOut, School, UserPlus, LogIn, Map, Sparkles, FileText } from 'lucide-react';
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHGt1qk9rWZy69XT1YgyAshR-faNwep9TvnZH8dc3Jw5IAFn1fO5oAkI_sHfd6ex0/exec';
 
@@ -116,7 +116,6 @@ export default function App() {
     
     setIsLoading(true);
     const normalizedId = regForm.id.replace(/\s+/g, '').toUpperCase();
-
     const kodSekolahPattern = /^[A-Z]{3,4}\d{1,4}$/;
     
     if (normalizedId !== 'SUPERADMIN' && !kodSekolahPattern.test(normalizedId)) {
@@ -209,6 +208,28 @@ export default function App() {
     }
   };
 
+  // FUNGSI BULK DELETE (Padam Berkelompok)
+  const handleBulkDeleteStudents = async (mykidsArray) => {
+    setIsLoading(true);
+    showNotification(`Memadam ${mykidsArray.length} rekod dari pangkalan data...`);
+    try {
+      const promises = mykidsArray.map(mykid => {
+        const payload = { action: 'delete_student', data: { mykid } };
+        return fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+      });
+      await Promise.all(promises);
+      setStudents(prev => prev.filter(s => !mykidsArray.includes(String(s.mykid))));
+      setDialog({ isOpen: true, type: 'success', title: 'Berjaya', message: `${mykidsArray.length} rekod telah berjaya dipadam secara berkelompok.`, onConfirm: () => setDialog({isOpen: false}) });
+    } catch(e) {
+      setDialog({ isOpen: true, type: 'alert', title: 'Ralat', message: 'Sebahagian rekod mungkin gagal dipadam. Sila semak semula jadual.', onConfirm: () => setDialog({isOpen: false}) });
+    }
+    setIsLoading(false);
+  };
+
   const handleSaveUser = async (userData) => {
     showNotification('Menyimpan institusi...');
     try {
@@ -248,7 +269,6 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <CustomDialog {...dialog} />
-        
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800"></div>
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-400/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
@@ -264,7 +284,6 @@ export default function App() {
         
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
           <div className="bg-white/95 backdrop-blur-xl py-10 px-6 shadow-2xl rounded-3xl sm:px-10 border border-white/50">
-            
             {!isRegistering ? (
               <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div>
@@ -353,7 +372,6 @@ export default function App() {
                 </div>
               </form>
             )}
-
           </div>
         </div>
       </div>
@@ -440,7 +458,7 @@ export default function App() {
         <main className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-50/50">
           <div className="max-w-7xl mx-auto h-full">
             {activeTab === 1 && <TabDashboard students={students} currentUser={currentUser} isLoading={isLoading} />}
-            {activeTab === 2 && <TabMaklumatMurid students={students} users={users} onSaveStudent={handleSaveStudent} onDeleteStudent={handleDeleteStudent} currentUser={currentUser} showNotification={showNotification} formatMyKid={formatMyKid} setDialog={setDialog} isLoading={isLoading} />}
+            {activeTab === 2 && <TabMaklumatMurid students={students} users={users} onSaveStudent={handleSaveStudent} onDeleteStudent={handleDeleteStudent} onBulkDeleteStudents={handleBulkDeleteStudents} currentUser={currentUser} showNotification={showNotification} formatMyKid={formatMyKid} setDialog={setDialog} isLoading={isLoading} />}
             {activeTab === 4 && currentUser.role !== 'superadmin' && <TabProfilInstitusi currentUser={currentUser} onSaveUser={handleSaveUser} />}
             {activeTab === 5 && currentUser?.role === 'superadmin' && <TabKawalanPengguna users={users} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} isSystemActive={isSystemActive} setIsSystemActive={setIsSystemActive} setDialog={setDialog} isLoading={isLoading} />}
             {activeTab === 6 && currentUser?.role === 'superadmin' && <TabPelaporan students={students} users={users} isLoading={isLoading} />}
@@ -453,7 +471,9 @@ export default function App() {
 
 const TabDashboard = ({ students, currentUser, isLoading }) => {
   const filtered = currentUser.role === 'superadmin' ? students : students.filter(s => s.kodInstitusi === currentUser.id);
-  
+  const muridLelaki = filtered.filter(s => s.jantina === 'Lelaki').length;
+  const muridPerempuan = filtered.filter(s => s.jantina === 'Perempuan').length;
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 relative overflow-hidden">
@@ -461,29 +481,44 @@ const TabDashboard = ({ students, currentUser, isLoading }) => {
         <h2 className="text-2xl font-bold text-slate-800 mb-2 relative z-10">Selamat Datang, {currentUser.namaInstitusi}</h2>
         <p className="text-slate-600 relative z-10">Sila gunakan menu di sebelah kiri untuk menguruskan data murid. Pastikan maklumat diisi dengan tepat dan terkini.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {isLoading ? (
           <div className="bg-slate-200 rounded-2xl shadow-sm p-6 h-32 animate-pulse flex flex-col justify-center border border-slate-300">
              <div className="h-4 bg-slate-300 rounded w-2/3 mb-3"></div>
              <div className="h-10 bg-slate-300 rounded w-1/3"></div>
           </div>
         ) : (
-          <div className="bg-blue-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden transform hover:-translate-y-1 transition-all">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-            <p className="text-blue-100 font-medium mb-1">Jumlah Murid Didaftar</p>
-            <p className="text-4xl font-extrabold">{filtered.length}</p>
-          </div>
+          <>
+            <div className="bg-blue-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden transform hover:-translate-y-1 transition-all">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+              <p className="text-blue-100 font-medium mb-1">Jumlah Murid Didaftar</p>
+              <p className="text-4xl font-extrabold">{filtered.length}</p>
+            </div>
+            <div className="bg-teal-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden transform hover:-translate-y-1 transition-all">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+              <p className="text-teal-100 font-medium mb-1">Jumlah Murid Lelaki</p>
+              <p className="text-4xl font-extrabold">{muridLelaki}</p>
+            </div>
+            <div className="bg-rose-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden transform hover:-translate-y-1 transition-all">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+              <p className="text-rose-100 font-medium mb-1">Jumlah Murid Perempuan</p>
+              <p className="text-4xl font-extrabold">{muridPerempuan}</p>
+            </div>
+          </>
         )}
       </div>
     </div>
   );
 };
 
-const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, currentUser, showNotification, formatMyKid, setDialog, isLoading }) => {
+const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onBulkDeleteStudents, currentUser, showNotification, formatMyKid, setDialog, isLoading }) => {
   const [filter, setFilter] = useState({ nama: '', mykid: '', tahun: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStudentData, setCurrentStudentData] = useState({});
-  const [dialogState, setDialogState] = useState({ isOpen: false, data: null });
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: '', data: null });
+  
+  // STATE UNTUK BULK DELETE
+  const [selectedStudents, setSelectedStudents] = useState([]);
 
   const isProfileIncomplete = currentUser.role !== 'superadmin' && (!currentUser.namaInstitusi || !currentUser.alamatInstitusi || !currentUser.daerah || !currentUser.kategoriSekolah);
 
@@ -495,6 +530,24 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
     .filter(s => String(s.nama || '').toLowerCase().includes(String(filter.nama || '').toLowerCase()))
     .filter(s => String(s.mykid || '').includes(String(filter.mykid || '')))
     .filter(s => String(s.tahun || '').toLowerCase().includes(String(filter.tahun || '').toLowerCase()));
+
+  // FUNGSI TICK SEMUA / TICK SEPARUH
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedStudents(filtered.map(s => String(s.mykid)));
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  const handleSelectStudent = (mykid) => {
+    const stringMykid = String(mykid);
+    if (selectedStudents.includes(stringMykid)) {
+      setSelectedStudents(prev => prev.filter(id => id !== stringMykid));
+    } else {
+      setSelectedStudents(prev => [...prev, stringMykid]);
+    }
+  };
 
   const handleExportCSV = () => {
     const header = ["No. MyKid/MyKad", "Nama_murid", "Tahun/Tingkatan", "Jantina", "Kategori B40", "Asnaf Fakir / Miskin", "Kod Sekolah", "Nama Sekolah", "Daerah"];
@@ -570,24 +623,51 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
     setIsModalOpen(true);
   };
 
+  // DIALOG DELETE (SINGLE & BULK)
   const handleDeleteClick = (s) => {
-    setDialogState({ isOpen: true, data: s });
+    setDialogState({ isOpen: true, type: 'single', data: s });
+  };
+
+  const handleBulkDeleteClick = () => {
+    setDialogState({ isOpen: true, type: 'bulk', data: selectedStudents });
   };
 
   const confirmDelete = () => {
-    if(dialogState.data) {
+    if (dialogState.type === 'single' && dialogState.data) {
       onDeleteStudent(dialogState.data.mykid);
+      setSelectedStudents(prev => prev.filter(id => id !== String(dialogState.data.mykid))); // clear if selected
+    } else if (dialogState.type === 'bulk' && dialogState.data) {
+      onBulkDeleteStudents(dialogState.data);
+      setSelectedStudents([]); // Reset checkbox selepas delete
     }
-    setDialogState({ isOpen: false, data: null });
+    setDialogState({ isOpen: false, type: '', data: null });
   };
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
-      <CustomDialog isOpen={dialogState.isOpen} type="confirm" title="Padam Rekod" message={`Adakah anda pasti mahu memadam rekod untuk MyKid ${dialogState.data?.mykid}? Data tidak boleh dikembalikan.`} onConfirm={confirmDelete} onCancel={() => setDialogState({isOpen:false, data:null})} />
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 relative">
+      <CustomDialog 
+        isOpen={dialogState.isOpen} 
+        type="confirm" 
+        title={dialogState.type === 'bulk' ? "Padam Rekod Pilihan" : "Padam Rekod"} 
+        message={dialogState.type === 'bulk' 
+          ? `Adakah anda pasti mahu memadam ${dialogState.data?.length} rekod yang telah dipilih? Data tidak boleh dikembalikan.`
+          : `Adakah anda pasti mahu memadam rekod untuk MyKid ${dialogState.data?.mykid}? Data tidak boleh dikembalikan.`
+        } 
+        onConfirm={confirmDelete} 
+        onCancel={() => setDialogState({isOpen:false, data:null, type:''})} 
+      />
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 gap-4">
         <h2 className="text-xl font-bold text-slate-800">Senarai Murid & Kategori</h2>
-        <div className="flex flex-wrap gap-2">
+        
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* BUTANG PADAM BERKELOMPOK MUNCUL JIKA ADA YANG DITANDA */}
+          {selectedStudents.length > 0 && (
+            <button onClick={handleBulkDeleteClick} className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 shadow-sm flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+              <Trash2 className="w-4 h-4"/> Padam Pilihan ({selectedStudents.length})
+            </button>
+          )}
+
           <button onClick={() => { 
             if (isProfileIncomplete) {
               showProfileAlert();
@@ -610,10 +690,25 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
         <div className="relative"><Search className="w-4 h-4 absolute left-3 top-3 text-slate-400"/><input type="text" placeholder="Tahun/Tingkatan..." value={filter.tahun} onChange={e=>setFilter({...filter, tahun:e.target.value})} className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500" /></div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 relative">
+        {/* LOADING OVERLAY JIKA BULK DELETE SEDANG BERJALAN */}
+        {isLoading && (
+           <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+           </div>
+        )}
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
+              <th className="px-4 py-3 text-left w-10">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" 
+                  onChange={handleSelectAll} 
+                  checked={selectedStudents.length > 0 && selectedStudents.length === filtered.length} 
+                />
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-12">Bil.</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">MyKid</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Penuh</th>
               {currentUser.role === 'superadmin' && (
@@ -630,9 +725,11 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {isLoading ? (
+            {isLoading && filtered.length === 0 ? (
               [...Array(5)].map((_, i) => (
-                <tr key={`loading-${i}`} className="animate-pulse bg-slate-50/50">
+                <tr key={i} className="animate-pulse bg-slate-50/50">
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="w-4 h-4 bg-slate-200 rounded"></div></td>
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-8"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-24"></div></td>
                   <td className="px-4 py-4"><div className="h-4 bg-slate-200 rounded w-48"></div></td>
                   {currentUser.role === 'superadmin' && (
@@ -651,8 +748,18 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
             ) : filtered.length > 0 ? (
               filtered.map((s, index) => {
                 const inst = users ? users.find(u => u.id === s.kodInstitusi) : null;
+                const isSelected = selectedStudents.includes(String(s.mykid));
                 return (
-                  <tr key={`${s.mykid}-${index}`} className="hover:bg-blue-50/50 transition-colors">
+                  <tr key={`${s.mykid}-${index}`} className={`transition-colors ${isSelected ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" 
+                        checked={isSelected} 
+                        onChange={() => handleSelectStudent(s.mykid)} 
+                      />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-slate-500">{index + 1}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-900">{s.mykid}</td>
                     <td className="px-4 py-3 text-sm text-slate-900 font-medium">{s.nama}</td>
                     {currentUser.role === 'superadmin' && (
@@ -664,7 +771,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                     )}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 && s.kategoriB40 !== 'Bukan B40' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriFakirMiskin || '-'}</span>
@@ -677,12 +784,13 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                 );
               })
             ) : (
-              <tr><td colSpan={currentUser.role === 'superadmin' ? 9 : 6} className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
+              <tr><td colSpan={currentUser.role === 'superadmin' ? 11 : 8} className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
             )}
           </tbody>
         </table>
       </div>
       
+      {/* MODAL TAMBAH/EDIT */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -704,7 +812,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Tahun/Tingkatan</label>
                   <input type="text" value={currentStudentData.tahun || ''} onChange={(e) => setCurrentStudentData({...currentStudentData, tahun: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
                 </div>
-               <div>
+                <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Jantina</label>
                   <select value={currentStudentData.jantina || ''} onChange={(e) => setCurrentStudentData({...currentStudentData, jantina: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     <option value="">-- Pilih --</option>
@@ -742,7 +850,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
               <button onClick={() => {
                 const { mykid, nama, tahun, jantina, kategoriB40, kategoriFakirMiskin } = currentStudentData;
                 
-                // PENGESAHAN (VALIDATION) SEMUA MEDAN WAJIB DIISI
+                // VALIDATION: Semua medan wajib diisi
                 if (!mykid || !nama || !tahun || !jantina || !kategoriB40 || !kategoriFakirMiskin) {
                   setDialog({ 
                     isOpen: true, 
@@ -751,7 +859,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, cur
                     message: 'Pendaftaran Gagal! Sila lengkapkan SEMUA ruangan (MyKid, Nama, Tahun, Jantina, Kategori B40 & Asnaf) sebelum menyimpan rekod.', 
                     onConfirm: () => setDialog({isOpen: false}) 
                   });
-                  return; // Hentikan fungsi simpan jika ada kotak yang kosong
+                  return; 
                 }
 
                 onSaveStudent({...currentStudentData, kodInstitusi: currentStudentData.kodInstitusi || currentUser.id});
@@ -915,7 +1023,7 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
           <tbody className="bg-white divide-y divide-slate-200">
             {isLoading ? (
               [...Array(4)].map((_, i) => (
-                <tr key={`loading-user-${i}`} className="animate-pulse bg-slate-50/50">
+                <tr key={i} className="animate-pulse bg-slate-50/50">
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
                   <td className="px-4 py-4"><div className="h-4 bg-slate-200 rounded w-48"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-24"></div></td>
@@ -1032,12 +1140,12 @@ const TabKawalanPengguna = ({ users, onSaveUser, onDeleteUser, isSystemActive, s
 const TabPelaporan = ({ students, users, isLoading }) => {
   const [reportType, setReportType] = useState('daerah');
   
-  // STATE KHAS UNTUK MODUL AI
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiTopic, setAiTopic] = useState('1');
-  const [aiReportContent, setAiReportContent] = useState('');
-  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-
+  // MODUL AI STATES
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiReport, setAiReport] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [reportTopic, setReportTopic] = useState('4. Laporan Keseluruhan (Ringkasan Prestasi)');
+  
   const daerahsList = ["BAGAN DATUK", "BAGAN SERAI", "BATU GAJAH", "GERIK", "IPOH", "KAMPAR", "KAMPONG GAJAH", "KUALA KANGSAR", "LENGGONG", "MANJUNG", "MUALLIM", "PARIT BUNTAR", "PENGKALAN HULU", "SELAMA", "SERI ISKANDAR", "TAIPING", "TAPAH", "TELUK INTAN"];
 
   const kategoriSekolahListFull = [
@@ -1053,51 +1161,42 @@ const TabPelaporan = ({ students, users, isLoading }) => {
     "TADIKA ISLAM SWASTA (AZS)"
   ];
 
-  const getDaerahOverallData = () => {
-    return daerahsList.map(d => {
-      const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
-      const count = students.filter(s => dUsers.includes(s.kodInstitusi)).length;
-      return { label: d, count };
-    });
-  };
+  // LOGIK PENGIRAAN
+  const getDaerahOverallData = () => daerahsList.map(d => {
+    const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
+    const count = students.filter(s => dUsers.includes(s.kodInstitusi)).length;
+    return { label: d, count };
+  });
   const daerahOverallData = getDaerahOverallData();
   const maxDaerahOverall = Math.max(...daerahOverallData.map(d => d.count), 1);
 
-  const getKategoriOverallData = () => {
-    return kategoriSekolahListFull.map(fullName => {
-      const kUsers = users.filter(u => u.kategoriSekolah === fullName).map(u => u.id);
-      const count = students.filter(s => kUsers.includes(s.kodInstitusi)).length;
-      return { label: fullName, count };
-    });
-  };
+  const getKategoriOverallData = () => kategoriSekolahListFull.map(fullName => {
+    const kUsers = users.filter(u => u.kategoriSekolah === fullName).map(u => u.id);
+    const count = students.filter(s => kUsers.includes(s.kodInstitusi)).length;
+    return { label: fullName, count };
+  });
   const kategoriOverallData = getKategoriOverallData();
   const maxKategoriOverall = Math.max(...kategoriOverallData.map(d => d.count), 1);
 
-  const getAsnafHeatmapData = () => {
-    return daerahsList.map(d => {
-      const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
-      const dStudents = students.filter(s => dUsers.includes(s.kodInstitusi));
-      const count = dStudents.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length;
-      return { label: d, count };
-    });
-  };
+  const getAsnafHeatmapData = () => daerahsList.map(d => {
+    const dUsers = users.filter(u => u.daerah === d).map(u => u.id);
+    const count = students.filter(s => dUsers.includes(s.kodInstitusi) && (s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin')).length;
+    return { label: d, count };
+  });
   const asnafHeatmapData = getAsnafHeatmapData();
   const maxAsnaf = Math.max(...asnafHeatmapData.map(d => d.count), 1);
 
-  const getSekolahKategoriData = () => {
-    return kategoriSekolahListFull.map(fullName => {
-      const kUsers = users.filter(u => u.id !== 'SUPERADMIN' && u.kategoriSekolah === fullName).map(u => u.id);
-      const count = kUsers.filter(kodSekolah => students.some(s => s.kodInstitusi === kodSekolah)).length;
-      return { label: fullName, count };
-    });
-  };
+  const getSekolahKategoriData = () => kategoriSekolahListFull.map(fullName => {
+    const kUsers = users.filter(u => u.id !== 'SUPERADMIN' && u.kategoriSekolah === fullName).map(u => u.id);
+    const count = kUsers.filter(kodSekolah => students.some(s => s.kodInstitusi === kodSekolah)).length;
+    return { label: fullName, count };
+  });
   const sekolahKategoriData = getSekolahKategoriData();
   const maxSekolahKategori = Math.max(...sekolahKategoriData.map(d => d.count), 1);
 
   const getHeatmapColor = (count, max, type = 'red') => {
     if (count === 0) return 'bg-slate-50 text-slate-400 border-slate-200';
     const ratio = count / max;
-    
     if (type === 'red') {
       if (ratio > 0.8) return 'bg-red-700 text-white shadow-md border-red-800';
       if (ratio > 0.6) return 'bg-red-600 text-white shadow-md border-red-700';
@@ -1145,128 +1244,127 @@ const TabPelaporan = ({ students, users, isLoading }) => {
     return stats;
   };
 
+  // FUNGSI JANA LAPORAN AI
+  const handleGenerateAI = async () => {
+    setIsGenerating(true);
+    setAiError('');
+    setAiReport('');
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+    if (!apiKey) {
+      setAiError('Gagal menjana laporan. Sila cuba lagi. Pastikan API Key wujud dalam kod jika diperlukan, atau gantikan dengan API yang sah.');
+      setIsGenerating(false);
+      return;
+    }
+
+    try {
+      const totalMurid = students.length;
+      const dataDaerah = JSON.stringify(daerahOverallData);
+      const dataKategori = JSON.stringify(kategoriOverallData);
+      const dataSekolah = JSON.stringify(sekolahKategoriData);
+      
+      let contextData = "";
+      if (reportTopic === '1. Taburan Keseluruhan Murid Mengikut Daerah') contextData = `Fokus pada data daerah ini: ${dataDaerah}`;
+      else if (reportTopic === '2. Taburan Keseluruhan Murid Mengikut Kategori') contextData = `Fokus pada data kategori ini: ${dataKategori}`;
+      else if (reportTopic === '3. Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori') contextData = `Fokus pada data pengisian sekolah ini: ${dataSekolah}`;
+      else contextData = `Data Daerah: ${dataDaerah}, Data Kategori: ${dataKategori}, Data Pengisian:${dataSekolah}`;
+
+      const prompt = `Anda adalah Penolong Pengarah Kanan di Jabatan Agama Islam Perak (JAIPk). Hasilkan satu Laporan Eksekutif Rasmi (dalam format HTML yang kemas, guna tag <h1>, <h2>, <p>, <ul>, <li>, dan <strong>) berkenaan status "Kutipan Data Maklumat Murid B40 & Asnaf Institusi Pendidikan Islam Negeri Perak".
+
+Tajuk Laporan yang diminta: ${reportTopic}
+Jumlah keseluruhan murid direkodkan: ${totalMurid}
+Konteks Data: ${contextData}
+
+Laporan mesti mempunyai:
+1. Tajuk Utama (format <h1>)
+2. Pendahuluan
+3. Analisis Data Terperinci (Senaraikan penemuan penting dari data yang diberi)
+4. Rumusan / Kesimpulan
+5. Disediakan oleh: Unit Data dan Pembangunan, Bahagian Pendidikan, JAIPk
+
+Sila berikan maklum balas dalam HTML tulen sahaja (tanpa blok kod \`\`\`html). Gunakan Bahasa Melayu rasmi kerajaan.`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+
+      const data = await response.json();
+      
+      if (data.error) throw new Error(data.error.message);
+      
+      let aiText = data.candidates[0].content.parts[0].text;
+      // Buang markdown backticks jika ada
+      aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
+      setAiReport(aiText);
+    } catch (error) {
+      setAiError('Ralat sambungan ke AI: ' + error.message);
+    }
+    setIsGenerating(false);
+  };
+
+  // FUNGSI MUAT TURUN WORD
+  const handleDownloadWord = () => {
+    if (!aiReport) return;
+    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Laporan AI JAIPk</title></head><body>";
+    const footer = "</body></html>";
+    const sourceHTML = header + aiReport + footer;
+    
+    const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Laporan_Eksekutif_${reportTopic.replace(/\s+/g, '_')}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // FUNGSI CETAK/MUAT TURUN PDF
+  const handleDownloadPDF = () => {
+    if (!aiReport) return;
+    const printWindow = window.open('', '', 'height=800,width=800');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Laporan AI - JAIPk</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; color: #333; }
+            h1 { color: #1e3a8a; font-size: 24px; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; }
+            h2 { color: #2563eb; font-size: 18px; margin-top: 20px; }
+            p { margin-bottom: 15px; text-align: justify; }
+            ul { margin-bottom: 15px; }
+            li { margin-bottom: 5px; }
+          </style>
+        </head>
+        <body>
+          ${aiReport}
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handlePrint = () => { window.print(); };
 
   const muridLelaki = students.filter(s => s.jantina === 'Lelaki').length;
   const muridPerempuan = students.filter(s => s.jantina === 'Perempuan').length;
 
-  // FUNGSI PENJANAAN LAPORAN AI
-  const handleGenerateAI = async () => {
-    setIsGeneratingAi(true);
-    setAiReportContent('');
-    
-    let dataString = "";
-    let promptTopic = "";
-    
-    if (aiTopic === '1') {
-        promptTopic = "Taburan Keseluruhan Murid Mengikut Daerah";
-        dataString = JSON.stringify(daerahOverallData.map(d => `${d.label}: ${d.count} murid`));
-    } else if (aiTopic === '2') {
-        promptTopic = "Taburan Keseluruhan Murid Mengikut Kategori Sekolah";
-        dataString = JSON.stringify(kategoriOverallData.map(d => `${d.label}: ${d.count} murid`));
-    } else if (aiTopic === '3') {
-        promptTopic = "Pengisian Institusi Yang Telah Mengisi Data Mengikut Kategori";
-        dataString = JSON.stringify(sekolahKategoriData.map(d => `${d.label}: ${d.count} buah sekolah`));
-    } else if (aiTopic === '4') {
-        promptTopic = "Laporan Keseluruhan Kutipan Data B40 & Asnaf";
-        dataString = `Jumlah Keseluruhan Murid: ${students.length}, Jumlah Lelaki: ${muridLelaki}, Jumlah Perempuan: ${muridPerempuan}, Jumlah Asnaf Fakir/Miskin: ${students.filter(s => s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin').length}, Jumlah Golongan B40: ${students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}. Sila hurai trend secara menyeluruh.`;
-    }
-
-    const systemPrompt = `Anda adalah Penganalisis Data Eksekutif Kanan di Jabatan Agama Islam Perak (JAIPk). Hasilkan satu Laporan Rasmi berstruktur untuk tajuk: "${promptTopic}". 
-    Gunakan data ini sahaja untuk rujukan anda: ${dataString}. 
-    
-    Format Laporan mesti mengandungi:
-    1. PENDAHULUAN (Tujuan laporan).
-    2. ANALISIS DATA (Huraikan angka tertinggi, terendah dan corak/trend yang menarik dalam bentuk perenggan rasmi).
-    3. RUMUSAN & CADANGAN (Berikan 2 cadangan tindakan kepada pihak pengurusan JAIPk).
-    
-    Tulis menggunakan laras bahasa Melayu formal, rasmi, dan mudah difahami. Gunakan gaya tulisan profesional kerajaan. Jangan hasilkan laporan yang terlalu panjang. (Gunakan simbol ** untuk tulisan tebal).`;
-
-    const payload = { contents: [{ parts: [{ text: systemPrompt }] }] };
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Leave this as empty string for integration
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-    try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (text) setAiReportContent(text);
-        else setAiReportContent('Gagal menjana laporan. Sila cuba lagi. Pastikan API Key wujud dalam kod jika diperlukan, atau gantikan dengan API yang sah.');
-    } catch (error) {
-        setAiReportContent('Ralat sambungan AI. Sila semak capaian internet anda.');
-    }
-    setIsGeneratingAi(false);
-  };
-
-  // FORMATTER UNTUK KEMASAN HTML (Bold & Italic)
-  const formatTextForDoc = (text) => {
-    let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    html = html.replace(/\n/g, '<br/>');
-    return html;
-  };
-
-  // FUNGSI MUAT TURUN WORD (.doc)
-  const downloadWord = () => {
-    const formattedContent = formatTextForDoc(aiReportContent);
-    const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset='utf-8'><title>Laporan JAIPk</title>
-    <style>body { font-family: 'Arial', sans-serif; line-height: 1.6; } h1 { color: #1e3a8a; text-align: center; } p { margin-bottom: 15px; }</style>
-    </head><body>
-    <h1>Laporan Statistik Maklumat Murid B40 & Asnaf JAIPk</h1>
-    <hr/>
-    <br/>
-    <div>${formattedContent}</div>
-    <br/><br/><p><em>Laporan ini dijana secara automatik oleh Kecerdasan Buatan (AI) Sistem Maklumat Murid JAIPk.</em></p>
-    </body></html>`;
-    
-    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Laporan_Analisis_Sistem_JAIPk.doc`;
-    link.click();
-  };
-
-  // FUNGSI MUAT TURUN PDF (Via Print Window)
-  const downloadPDF = () => {
-    const formattedContent = formatTextForDoc(aiReportContent);
-    const printWindow = window.open('', '', 'height=800,width=800');
-    printWindow.document.write('<html><head><title>Cetak Laporan PDF</title>');
-    printWindow.document.write('<style>body{font-family: Arial, sans-serif; padding: 40px; line-height: 1.6;} h1{color: #1e3a8a; text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px;} .content{margin-top: 20px;} .footer{margin-top: 50px; font-size: 12px; color: #666; text-align: center; font-style: italic;}</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write('<h1>Laporan Statistik Maklumat Murid B40 & Asnaf JAIPk</h1>');
-    printWindow.document.write('<div class="content">' + formattedContent + '</div>');
-    printWindow.document.write('<div class="footer">Laporan ini dijana secara automatik oleh Kecerdasan Buatan (AI) Sistem Maklumat Murid JAIPk.</div>');
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
-  };
-
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 relative">
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+      
+      {/* HEADER & CETAK A4 */}
       <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <h2 className="text-xl font-bold text-slate-800">Pelaporan & Statistik</h2>
-        <div className="flex gap-2">
-            {/* BUTANG GENERATE AI REPORT */}
-            <button onClick={() => setIsAiModalOpen(true)} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-sm shadow-md hover:shadow-lg hover:from-purple-700 hover:to-indigo-700 flex items-center gap-2 transition-all">
-               <span>✨ Laporan AI</span>
-            </button>
-            <button onClick={handlePrint} className="px-4 py-2 rounded-lg bg-slate-800 text-white font-semibold text-sm hover:bg-slate-900 shadow-sm flex items-center gap-2">
-               <FileDown className="w-4 h-4"/> Cetak A4
-            </button>
-        </div>
+        <h2 className="text-xl font-bold text-slate-800">Statistik Keseluruhan</h2>
+        <button onClick={handlePrint} className="px-4 py-2 rounded-lg bg-slate-800 text-white font-semibold text-sm hover:bg-slate-900 shadow-sm flex items-center gap-2 print:hidden"><FileDown className="w-4 h-4"/> Cetak A4</button>
       </div>
 
+      {/* 5 KOTAK STATISTIK ATAS */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-10">
         <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm text-center">
            <h3 className="text-[10px] sm:text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Jumlah Murid</h3>
@@ -1278,7 +1376,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm text-center">
            <h3 className="text-[10px] sm:text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Jumlah B40</h3>
-           {isLoading ? <div className="h-8 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}</p>}
+           {isLoading ? <div className="h-8 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40).length}</p>}
         </div>
         <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 shadow-sm text-center">
            <h3 className="text-[10px] sm:text-xs font-bold text-teal-800 uppercase tracking-wider mb-2">Murid Lelaki</h3>
@@ -1290,6 +1388,55 @@ const TabPelaporan = ({ students, users, isLoading }) => {
         </div>
       </div>
 
+      {/* =========================================
+          MODUL PENJANAAN LAPORAN AI (GEMINI) 
+      ========================================= */}
+      <div className="mb-10 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm print:hidden">
+        <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-4">
+           <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+             <Sparkles className="w-5 h-5" />
+           </div>
+           <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide">PENJANAAN LAPORAN EKSEKUTIF (AI)</h3>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-end">
+           <div className="flex-1 w-full">
+             <label className="block text-sm font-bold text-slate-700 mb-2">Pilih Tajuk Laporan:</label>
+             <select value={reportTopic} onChange={(e) => setReportTopic(e.target.value)} className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700">
+               <option value="1. Taburan Keseluruhan Murid Mengikut Daerah">1. Taburan Keseluruhan Murid Mengikut Daerah</option>
+               <option value="2. Taburan Keseluruhan Murid Mengikut Kategori">2. Taburan Keseluruhan Murid Mengikut Kategori</option>
+               <option value="3. Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori">3. Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori</option>
+               <option value="4. Laporan Keseluruhan (Ringkasan Prestasi)">4. Laporan Keseluruhan (Ringkasan Prestasi)</option>
+             </select>
+           </div>
+           <button onClick={handleGenerateAI} disabled={isGenerating || isLoading} className="w-full md:w-auto px-8 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+             {isGenerating ? ( <><RefreshCw className="w-5 h-5 animate-spin"/> Menjana...</> ) : 'Mula Jana Laporan'}
+           </button>
+        </div>
+
+        {/* KOTAK HASIL AI */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+           <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
+             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">HASIL ANALISIS AI</span>
+             <div className="flex gap-2">
+               <button onClick={handleDownloadWord} disabled={!aiReport} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-xs font-bold hover:bg-blue-200 transition-colors disabled:opacity-50 flex items-center gap-1"><FileText className="w-3 h-3"/> Microsoft Word</button>
+               <button onClick={handleDownloadPDF} disabled={!aiReport} className="px-3 py-1.5 bg-red-100 text-red-700 rounded-md text-xs font-bold hover:bg-red-200 transition-colors disabled:opacity-50 flex items-center gap-1"><FileDown className="w-3 h-3"/> PDF</button>
+             </div>
+           </div>
+           <div className="p-6 min-h-[150px] max-h-[500px] overflow-y-auto">
+             {aiError ? (
+               <div className="text-slate-600 text-sm">{aiError}</div>
+             ) : aiReport ? (
+               <div className="prose prose-sm max-w-none text-slate-800" dangerouslySetInnerHTML={{ __html: aiReport }} />
+             ) : (
+               <div className="h-full flex items-center justify-center text-slate-400 text-sm italic">Laporan AI akan dipaparkan di sini...</div>
+             )}
+           </div>
+        </div>
+      </div>
+      {/* TAMAT MODUL AI */}
+
+      {/* PETA HABA 1: JUMLAH KESELURUHAN (DAERAH) */}
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-indigo-600"/>
@@ -1303,8 +1450,21 @@ const TabPelaporan = ({ students, users, isLoading }) => {
              </div>
            ))}
         </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-indigo-100"></div>
+              <div className="w-4 h-4 rounded bg-indigo-400"></div>
+              <div className="w-4 h-4 rounded bg-indigo-500"></div>
+              <div className="w-4 h-4 rounded bg-indigo-600"></div>
+              <div className="w-4 h-4 rounded bg-indigo-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
       </div>
 
+      {/* PETA HABA 2: JUMLAH KESELURUHAN MURID (KATEGORI NAMA PENUH) */}
       <div className="mb-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-emerald-600"/>
@@ -1318,8 +1478,21 @@ const TabPelaporan = ({ students, users, isLoading }) => {
              </div>
            ))}
         </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-emerald-100"></div>
+              <div className="w-4 h-4 rounded bg-emerald-400"></div>
+              <div className="w-4 h-4 rounded bg-emerald-500"></div>
+              <div className="w-4 h-4 rounded bg-emerald-600"></div>
+              <div className="w-4 h-4 rounded bg-emerald-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
       </div>
 
+      {/* PETA HABA 3: ASNAF FAKIR/MISKIN (DAERAH) */}
       <div className="mb-10 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <Map className="w-5 h-5 text-red-600"/>
@@ -1333,8 +1506,21 @@ const TabPelaporan = ({ students, users, isLoading }) => {
              </div>
            ))}
         </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-red-100"></div>
+              <div className="w-4 h-4 rounded bg-red-400"></div>
+              <div className="w-4 h-4 rounded bg-red-500"></div>
+              <div className="w-4 h-4 rounded bg-red-600"></div>
+              <div className="w-4 h-4 rounded bg-red-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
       </div>
 
+      {/* PETA HABA 4: JUMLAH SEKOLAH MENGISI DATA (KATEGORI) */}
       <div className="mb-10 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
            <School className="w-5 h-5 text-purple-600"/>
@@ -1348,8 +1534,21 @@ const TabPelaporan = ({ students, users, isLoading }) => {
              </div>
            ))}
         </div>
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs font-medium text-slate-500">
+           <span>Rendah</span>
+           <div className="flex gap-1">
+              <div className="w-4 h-4 rounded bg-slate-50 border border-slate-200"></div>
+              <div className="w-4 h-4 rounded bg-purple-100"></div>
+              <div className="w-4 h-4 rounded bg-purple-400"></div>
+              <div className="w-4 h-4 rounded bg-purple-500"></div>
+              <div className="w-4 h-4 rounded bg-purple-600"></div>
+              <div className="w-4 h-4 rounded bg-purple-700"></div>
+           </div>
+           <span>Tinggi</span>
+        </div>
       </div>
 
+      {/* JADUAL STATISTIK */}
       <div className="mb-6 flex gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
         <select value={reportType} onChange={(e) => setReportType(e.target.value)} className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-slate-700">
           <option value="daerah">Jadual Pecahan Mengikut Daerah</option>
@@ -1370,7 +1569,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
           <tbody className="bg-white divide-y divide-slate-200">
             {isLoading ? (
                [...Array(4)].map((_, i) => (
-                 <tr key={`loading-table-${i}`} className="animate-pulse bg-slate-50/50">
+                 <tr key={i} className="animate-pulse bg-slate-50/50">
                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-32"></div></td>
                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
@@ -1379,7 +1578,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
                ))
             ) : (
               getStats().map((st, i) => (
-                <tr key={`stat-${i}`} className="hover:bg-slate-50 transition-colors">
+                <tr key={i} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{st.label}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-600">{st.total}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-cyan-600">{st.asnaf}</td>
@@ -1390,74 +1589,7 @@ const TabPelaporan = ({ students, users, isLoading }) => {
           </tbody>
         </table>
       </div>
-
-      {/* POPUP MODAL UNTUK AI GENERATOR */}
-      {isAiModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
-            
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
-              <div className="flex items-center gap-3">
-                 <span className="bg-purple-100 text-purple-700 p-2 rounded-lg">✨</span>
-                 <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide">Penjanaan Laporan Eksekutif (AI)</h3>
-              </div>
-              <button onClick={() => setIsAiModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 bg-slate-50/30">
-               <div className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Pilih Tajuk Laporan:</label>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                      <select value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} className="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-semibold text-sm text-slate-700">
-                        <option value="1">1. Taburan Keseluruhan Murid Mengikut Daerah</option>
-                        <option value="2">2. Taburan Keseluruhan Murid Mengikut Kategori</option>
-                        <option value="3">3. Pengisian: Institusi Yang Telah Mengisi Data Mengikut Kategori</option>
-                        <option value="4">4. Laporan Keseluruhan (Ringkasan Prestasi)</option>
-                      </select>
-                      <button onClick={handleGenerateAI} disabled={isGeneratingAi} className="px-6 py-2 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-900 disabled:opacity-50 flex items-center justify-center gap-2">
-                         {isGeneratingAi ? <RefreshCw className="w-4 h-4 animate-spin"/> : 'Mula Jana Laporan'}
-                      </button>
-                  </div>
-               </div>
-
-               <div className="bg-white rounded-xl border border-slate-200 min-h-[300px] flex flex-col overflow-hidden shadow-inner">
-                  <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Hasil Analisis AI</span>
-                     
-                     {/* BUTANG MUAT TURUN (Hanya keluar bila laporan dah siap) */}
-                     {aiReportContent && !isGeneratingAi && (
-                         <div className="flex gap-2">
-                             <button onClick={downloadWord} className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded text-xs font-bold flex items-center gap-1 transition-colors">
-                                Microsoft Word
-                             </button>
-                             <button onClick={downloadPDF} className="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded text-xs font-bold flex items-center gap-1 transition-colors">
-                                PDF
-                             </button>
-                         </div>
-                     )}
-                  </div>
-                  
-                  <div className="p-6 text-sm text-slate-700 leading-relaxed overflow-y-auto">
-                     {isGeneratingAi ? (
-                        <div className="flex flex-col items-center justify-center h-full text-purple-600 gap-3 py-10">
-                           <RefreshCw className="w-8 h-8 animate-spin"/>
-                           <p className="font-semibold animate-pulse">Menghubungi Pelayan AI JAIPk... Sila tunggu...</p>
-                        </div>
-                     ) : aiReportContent ? (
-                        // Render formatted HTML content
-                        <div dangerouslySetInnerHTML={{ __html: formatTextForDoc(aiReportContent) }} className="prose prose-sm max-w-none prose-p:mb-4 prose-strong:text-slate-900 prose-strong:font-extrabold" />
-                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-400 py-10">
-                           <p className="italic text-center">Pilih tajuk di atas dan tekan "Mula Jana Laporan" untuk membenarkan Kecerdasan Buatan (AI) mengarang laporan secara automatik.</p>
-                        </div>
-                     )}
-                  </div>
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
       <style>{`
         @media print {
           body * { visibility: hidden; }
