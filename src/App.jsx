@@ -208,7 +208,6 @@ export default function App() {
     }
   };
 
-  // FUNGSI BULK DELETE (Padam Berkelompok)
   const handleBulkDeleteStudents = async (mykidsArray) => {
     setIsLoading(true);
     showNotification(`Memadam ${mykidsArray.length} rekod dari pangkalan data...`);
@@ -517,7 +516,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
   const [currentStudentData, setCurrentStudentData] = useState({});
   const [dialogState, setDialogState] = useState({ isOpen: false, type: '', data: null });
   
-  // STATE UNTUK BULK DELETE
   const [selectedStudents, setSelectedStudents] = useState([]);
 
   const isProfileIncomplete = currentUser.role !== 'superadmin' && (!currentUser.namaInstitusi || !currentUser.alamatInstitusi || !currentUser.daerah || !currentUser.kategoriSekolah);
@@ -531,7 +529,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
     .filter(s => String(s.mykid || '').includes(String(filter.mykid || '')))
     .filter(s => String(s.tahun || '').toLowerCase().includes(String(filter.tahun || '').toLowerCase()));
 
-  // FUNGSI TICK SEMUA / TICK SEPARUH
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedStudents(filtered.map(s => String(s.mykid)));
@@ -623,7 +620,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
     setIsModalOpen(true);
   };
 
-  // DIALOG DELETE (SINGLE & BULK)
   const handleDeleteClick = (s) => {
     setDialogState({ isOpen: true, type: 'single', data: s });
   };
@@ -635,10 +631,10 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
   const confirmDelete = () => {
     if (dialogState.type === 'single' && dialogState.data) {
       onDeleteStudent(dialogState.data.mykid);
-      setSelectedStudents(prev => prev.filter(id => id !== String(dialogState.data.mykid))); // clear if selected
+      setSelectedStudents(prev => prev.filter(id => id !== String(dialogState.data.mykid))); 
     } else if (dialogState.type === 'bulk' && dialogState.data) {
       onBulkDeleteStudents(dialogState.data);
-      setSelectedStudents([]); // Reset checkbox selepas delete
+      setSelectedStudents([]); 
     }
     setDialogState({ isOpen: false, type: '', data: null });
   };
@@ -661,7 +657,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
         <h2 className="text-xl font-bold text-slate-800">Senarai Murid & Kategori</h2>
         
         <div className="flex flex-wrap gap-2 items-center">
-          {/* BUTANG PADAM BERKELOMPOK MUNCUL JIKA ADA YANG DITANDA */}
           {selectedStudents.length > 0 && (
             <button onClick={handleBulkDeleteClick} className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 shadow-sm flex items-center gap-2 animate-in fade-in zoom-in duration-200">
               <Trash2 className="w-4 h-4"/> Padam Pilihan ({selectedStudents.length})
@@ -691,7 +686,6 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 relative">
-        {/* LOADING OVERLAY JIKA BULK DELETE SEDANG BERJALAN */}
         {isLoading && (
            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
               <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
@@ -719,6 +713,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
                 </>
               )}
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Tahun</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Jantina</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kategori B40</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Asnaf</th>
               <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Tindakan</th>
@@ -739,6 +734,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
                       <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-20"></div></td>
                     </>
                   )}
+                  <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
                   <td className="px-4 py-4 whitespace-nowrap"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
@@ -770,6 +766,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
                       </>
                     )}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{s.jantina || '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
                     </td>
@@ -784,7 +781,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
                 );
               })
             ) : (
-              <tr><td colSpan={currentUser.role === 'superadmin' ? 11 : 8} className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
+              <tr><td colSpan={currentUser.role === 'superadmin' ? 12 : 9} className="px-4 py-8 text-center text-sm text-slate-500 italic">Tiada rekod dijumpai.</td></tr>
             )}
           </tbody>
         </table>
@@ -840,6 +837,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
                           <option value="">-- Pilih --</option>
                           <option value="Fakir">Fakir</option>
                           <option value="Miskin">Miskin</option>
+                          <option value="Bukan Asnaf">Bukan Asnaf</option>
                         </select>
                      </div>
                    </div>
