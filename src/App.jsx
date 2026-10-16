@@ -208,23 +208,33 @@ export default function App() {
     }
   };
 
+  // KEMAS KINI FUNGSI BULK DELETE YANG BAHARU
   const handleBulkDeleteStudents = async (mykidsArray) => {
     setIsLoading(true);
-    showNotification(`Memadam ${mykidsArray.length} rekod dari pangkalan data...`);
+    showNotification(`Memadam ${mykidsArray.length} rekod. Sila tunggu sebentar...`);
+    
     try {
-      const promises = mykidsArray.map(mykid => {
+      // Padam satu per satu supaya Google Sheets tidak 'jem' (Traffic Jam)
+      for (let i = 0; i < mykidsArray.length; i++) {
+        const mykid = mykidsArray[i];
         const payload = { action: 'delete_student', data: { mykid } };
-        return fetch(GAS_URL, {
+        
+        await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
-      });
-      await Promise.all(promises);
+        
+        // Rehat 0.5 saat sebelum padam nama seterusnya untuk elak Google limit
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+      }
+      
       setStudents(prev => prev.filter(s => !mykidsArray.includes(String(s.mykid))));
-      setDialog({ isOpen: true, type: 'success', title: 'Berjaya', message: `${mykidsArray.length} rekod telah berjaya dipadam secara berkelompok.`, onConfirm: () => setDialog({isOpen: false}) });
+      setDialog({ isOpen: true, type: 'success', title: 'Berjaya', message: `${mykidsArray.length} rekod telah dipadam sepenuhnya.`, onConfirm: () => setDialog({isOpen: false}) });
     } catch(e) {
-      setDialog({ isOpen: true, type: 'alert', title: 'Ralat', message: 'Sebahagian rekod mungkin gagal dipadam. Sila semak semula jadual.', onConfirm: () => setDialog({isOpen: false}) });
+      // Fetch semula data terbaru jika tergendala
+      fetchData(); 
+      setDialog({ isOpen: true, type: 'alert', title: 'Kesesakan Trafik', message: 'Terdapat kesesakan pada pelayan Google. Sebahagian data mungkin gagal dipadam. Sila semak jadual dan cuba lagi pada baki rekod.', onConfirm: () => setDialog({isOpen: false}) });
     }
     setIsLoading(false);
   };
@@ -768,7 +778,7 @@ const TabMaklumatMurid = ({ students, users, onSaveStudent, onDeleteStudent, onB
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{s.tahun}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{s.jantina || '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.kategoriB40 && s.kategoriB40 !== 'Bukan B40' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriB40 || '-'}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(s.kategoriFakirMiskin === 'Fakir' || s.kategoriFakirMiskin === 'Miskin') ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-500'}`}>{s.kategoriFakirMiskin || '-'}</span>
@@ -1374,7 +1384,7 @@ Sila berikan maklum balas dalam HTML tulen sahaja (tanpa blok kod \`\`\`html). G
         </div>
         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm text-center">
            <h3 className="text-[10px] sm:text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Jumlah B40</h3>
-           {isLoading ? <div className="h-8 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40).length}</p>}
+           {isLoading ? <div className="h-8 bg-amber-200/50 rounded w-16 mx-auto animate-pulse"></div> : <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">{students.filter(s => s.kategoriB40 && s.kategoriB40 !== 'Bukan B40').length}</p>}
         </div>
         <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 shadow-sm text-center">
            <h3 className="text-[10px] sm:text-xs font-bold text-teal-800 uppercase tracking-wider mb-2">Murid Lelaki</h3>
